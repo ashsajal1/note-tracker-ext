@@ -9,7 +9,6 @@ export default defineConfig({
     description:
       'Fast, private, local-first note tracker with tags and instant search. All data stays in your browser.',
     lang: 'en',
-    default_locale: 'en',
     permissions: ['storage'],
     commands: {
       _execute_action: {
