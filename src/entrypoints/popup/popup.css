@@ -80,17 +80,22 @@
   }
 }
 
-/* Popup window dimensions — the auto-fill grid adapts to any width. */
+/* Popup window dimensions.
+   Explicit sizes only — viewport units (vw/vh/max-width: 100vw) are
+   forbidden here: Chrome sizes the popup to the content against a tiny
+   initial viewport, so anything viewport-relative collapses the popup
+   into a narrow strip. */
 html,
-body,
+body {
+  width: 800px;
+  height: 600px;
+}
+
 #root {
   height: 100%;
 }
 
 body {
-  width: 800px;
-  height: 600px;
-  max-width: 100vw;
   margin: 0;
   overflow: hidden;
 }

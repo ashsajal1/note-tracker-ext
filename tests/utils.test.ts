@@ -52,7 +52,8 @@ describe('formatRelative', () => {
 describe('previewText', () => {
   it('truncates long content with an ellipsis and trims whitespace', () => {
     expect(previewText('  hi  ')).toBe('hi');
-    expect(previewText('a'.repeat(400))).toMatch(/^a{320}…$/);
+    expect(previewText('a'.repeat(400))).toBe('a'.repeat(400));
+    expect(previewText('a'.repeat(500))).toBe(`${'a'.repeat(480)}…`);
   });
 });
 
