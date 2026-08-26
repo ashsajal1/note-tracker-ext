@@ -6,6 +6,8 @@ accounts, no servers, no tracking, no network requests.
 
 ![stack](https://img.shields.io/badge/Manifest-V3-5b21f6) built with **WXT + React 19 + TypeScript + Tailwind v4 + Zustand + Dexie (IndexedDB)**
 
+![Note Tracker popup](./screenshots/popup.png)
+
 ## Features
 
 - **Instant search** — partial + multi-keyword matching across note content
@@ -19,6 +21,8 @@ accounts, no servers, no tracking, no network requests.
   a System/Light/Dark setting
 - **Backups** — export/import a portable JSON file; clear all data from the
   settings dialog
+- **Full screen** — open the popup in a full browser tab, then toggle native
+  fullscreen from the header, for comfortable editing and browsing
 - **Keyboard-first** — `/` or `Ctrl+K` search · `n` new note · `Ctrl+Enter`
   save · `Esc` close/clear · rebindable "open extension" shortcut (default
   `Alt+Shift+N` / `Cmd+Shift+N`, configurable in your browser's extension
