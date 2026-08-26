@@ -1,0 +1,5 @@
+.output
+.wxt
+node_modules
+coverage
+package-lock.json

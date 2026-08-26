@@ -1,0 +1,10 @@
+node_modules
+.output
+.wxt
+stats.html
+stats-*.json
+*.log
+.DS_Store
+.env
+.env.*
+coverage
