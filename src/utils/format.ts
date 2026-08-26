@@ -29,7 +29,7 @@ export function formatFull(iso: string): string {
 }
 
 /** First line(s) of note content for card previews. */
-export function previewText(content: string, maxChars = 320): string {
+export function previewText(content: string, maxChars = 480): string {
   const trimmed = content.trim();
   return trimmed.length > maxChars ? `${trimmed.slice(0, maxChars).trimEnd()}…` : trimmed;
 }

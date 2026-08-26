@@ -44,7 +44,7 @@ export function NoteCard({ note, activeTags, onEdit, onDelete, onToggleTag }: No
         className="flex-1 p-4 pb-2 text-left focus-visible:outline-none cursor-pointer"
         title="Click to edit"
       >
-        <p className="line-clamp-6 whitespace-pre-wrap break-words text-sm leading-relaxed">
+        <p className="line-clamp-8 whitespace-pre-wrap break-words text-sm leading-relaxed">
           {previewText(note.content) || (
             <span className="italic text-muted-foreground">Empty note</span>
           )}
