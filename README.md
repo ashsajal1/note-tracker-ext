@@ -8,6 +8,8 @@ accounts, no servers, no tracking, no network requests.
 
 ![Note Tracker popup](./screenshots/popup.png)
 
+![Note Tracker popup (dark mode)](./screenshots/popup-dark.png)
+
 ## Features
 
 - **Instant search** — partial + multi-keyword matching across note content
