@@ -1,0 +1,82 @@
+import type { Note } from '@/types/note';
+import { dedupeTags } from '@/utils/tags';
+
+export const EXPORT_FORMAT_VERSION = 1;
+
+export interface ExportPayload {
+  app: 'note-tracker';
+  version: number;
+  exportedAt: string;
+  notes: Note[];
+}
+
+export function buildExportPayload(notes: Note[]): ExportPayload {
+  return {
+    app: 'note-tracker',
+    version: EXPORT_FORMAT_VERSION,
+    exportedAt: new Date().toISOString(),
+    notes,
+  };
+}
+
+export interface ImportResult {
+  notes: Note[];
+  /** entries dropped because they were malformed */
+  skipped: number;
+}
+
+/**
+ * Validate and sanitize an unknown parsed JSON value into a safe list of
+ * notes. Malformed entries are skipped and counted; valid entries are
+ * normalized (tags coerced + deduped, invalid dates replaced).
+ */
+export function parseImportPayload(data: unknown, now = Date.now()): ImportResult {
+  const container = asRecord(data);
+  const rawNotes = Array.isArray(container?.notes)
+    ? container.notes
+    : Array.isArray(data)
+      ? data
+      : null;
+  if (!rawNotes) {
+    throw new Error('Invalid file: expected { "notes": [...] }');
+  }
+
+  let skipped = 0;
+  const notes: Note[] = [];
+  for (const raw of rawNotes) {
+    const note = sanitizeNote(raw, now);
+    if (note) notes.push(note);
+    else skipped += 1;
+  }
+  return { notes, skipped };
+}
+
+function sanitizeNote(raw: unknown, now: number): Note | null {
+  const rec = asRecord(raw);
+  if (!rec) return null;
+  if (typeof rec.id !== 'string' || rec.id.length === 0) return null;
+  if (typeof rec.content !== 'string') return null;
+
+  const tags = Array.isArray(rec.tags)
+    ? dedupeTags(rec.tags.filter((t): t is string => typeof t === 'string'))
+    : [];
+
+  const fallbackIso = new Date(now).toISOString();
+  return {
+    id: rec.id,
+    content: rec.content,
+    tags,
+    createdAt: isoOr(rec.createdAt, fallbackIso),
+    updatedAt: isoOr(rec.updatedAt, fallbackIso),
+  };
+}
+
+function isoOr(value: unknown, fallback: string): string {
+  return typeof value === 'string' && !Number.isNaN(Date.parse(value)) ? value : fallback;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
