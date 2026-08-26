@@ -1,5 +1,6 @@
-import { Moon, NotebookPen, Plus, Settings, Sun } from 'lucide-react';
+import { Maximize2, Minimize2, Moon, NotebookPen, Plus, Settings, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useFullView } from '@/hooks/use-full-view';
 import { useUiStore } from '@/stores/ui.store';
 
 interface HeaderProps {
@@ -11,6 +12,8 @@ export function Header({ resolvedTheme }: HeaderProps) {
   const setSettingsOpen = useUiStore((s) => s.setSettingsOpen);
   const setTheme = useUiStore((s) => s.setTheme);
   const themeSetting = useUiStore((s) => s.theme);
+
+  const { isTabView, isFullscreen, openFullView, toggleFullscreen } = useFullView();
 
   // Quick toggle flips light/dark; "system" users get the opposite of
   // whatever the OS currently resolves to.
@@ -51,6 +54,17 @@ export function Header({ resolvedTheme }: HeaderProps) {
           title="Toggle theme"
         >
           {resolvedTheme === 'dark' ? <Sun /> : <Moon />}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={isTabView ? toggleFullscreen : openFullView}
+          aria-label={
+            isTabView ? (isFullscreen ? 'Exit full screen' : 'Enter full screen') : 'Open full screen'
+          }
+          title={isTabView ? 'Toggle full screen' : 'Open in full screen'}
+        >
+          {isTabView && isFullscreen ? <Minimize2 /> : <Maximize2 />}
         </Button>
         <Button
           variant="ghost"
