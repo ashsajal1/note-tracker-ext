@@ -8,19 +8,41 @@ import { normalizeTag, parseTagInput } from '@/utils/tags';
 interface TagInputProps {
   value: string[];
   onChange: (tags: string[]) => void;
-  /** existing tags across all notes, used as suggestions */
+  /** existing tags across all notes (sorted by usage), used as suggestions */
   allTags?: string[];
 }
 
+const MAX_SUGGESTIONS = 6;
+
+/**
+ * Tag input with suggestions from previously used tags.
+ * - Focus shows your most-used tags; typing filters (prefix matches rank
+ *   first, then substring matches).
+ * - ↑/↓ highlight, Enter/Tab accept, Esc clears. Click works too.
+ */
 export function TagInput({ value, onChange, allTags = [] }: TagInputProps) {
   const [draft, setDraft] = useState('');
   const [focused, setFocused] = useState(false);
+  const [highlight, setHighlight] = useState(-1);
+  const [prevDraft, setPrevDraft] = useState(draft);
+
+  // Reset the highlight whenever the query changes (during render —
+  // avoids an effect-driven cascading render).
+  if (prevDraft !== draft) {
+    setPrevDraft(draft);
+    setHighlight(-1);
+  }
 
   const suggestions = useMemo(() => {
+    const pool = allTags.filter((t) => !value.includes(t));
     const q = normalizeTag(draft);
-    if (!q) return [];
-    return allTags.filter((t) => t.startsWith(q) && !value.includes(t)).slice(0, 5);
+    if (!q) return pool.slice(0, MAX_SUGGESTIONS);
+    const starts = pool.filter((t) => t.startsWith(q));
+    const contains = pool.filter((t) => !t.startsWith(q) && t.includes(q));
+    return [...starts, ...contains].slice(0, MAX_SUGGESTIONS);
   }, [draft, allTags, value]);
+
+  const showSuggestions = focused && suggestions.length > 0;
 
   const commitDraft = () => {
     const parsed = parseTagInput(draft);
@@ -37,6 +59,28 @@ export function TagInput({ value, onChange, allTags = [] }: TagInputProps) {
 
   const removeTag = (tag: string) => {
     onChange(value.filter((t) => t !== tag));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' && showSuggestions) {
+      e.preventDefault();
+      setHighlight((h) => Math.min(h + 1, suggestions.length - 1));
+    } else if (e.key === 'ArrowUp' && showSuggestions) {
+      e.preventDefault();
+      setHighlight((h) => Math.max(h - 1, -1));
+    } else if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      if (showSuggestions && highlight >= 0) addTag(suggestions[highlight]!);
+      else commitDraft();
+    } else if (e.key === 'Tab' && showSuggestions && highlight >= 0) {
+      e.preventDefault();
+      addTag(suggestions[highlight]!);
+    } else if (e.key === 'Backspace' && draft === '' && value.length > 0) {
+      removeTag(value[value.length - 1]!);
+    } else if (e.key === 'Escape' && draft !== '') {
+      e.stopPropagation();
+      setDraft('');
+    }
   };
 
   return (
@@ -71,37 +115,49 @@ export function TagInput({ value, onChange, allTags = [] }: TagInputProps) {
             setFocused(false);
             commitDraft();
           }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ',') {
-              e.preventDefault();
-              commitDraft();
-            } else if (e.key === 'Backspace' && draft === '' && value.length > 0) {
-              removeTag(value[value.length - 1]!);
-            }
-          }}
+          onKeyDown={handleKeyDown}
           placeholder={value.length === 0 ? 'Add tags…' : ''}
           aria-label="Add tag"
+          role="combobox"
+          aria-expanded={showSuggestions}
+          aria-controls="tag-suggestions"
+          aria-autocomplete="list"
+          aria-activedescendant={
+            showSuggestions && highlight >= 0 ? `tag-suggestion-${highlight}` : undefined
+          }
           autoComplete="off"
           spellCheck={false}
           className="h-7 min-w-24 flex-1 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0 dark:bg-transparent"
         />
       </div>
-      {focused && suggestions.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap gap-1" role="listbox" aria-label="Tag suggestions">
-          {suggestions.map((tag) => (
+      {showSuggestions && (
+        <div
+          id="tag-suggestions"
+          role="listbox"
+          aria-label="Tag suggestions"
+          className="mt-1.5 flex flex-wrap gap-1"
+        >
+          {suggestions.map((tag, i) => (
             <button
               key={tag}
               type="button"
               role="option"
-              aria-selected={false}
+              id={`tag-suggestion-${i}`}
+              aria-selected={highlight === i}
               onMouseDown={(e) => {
                 // Prevent input blur before the click lands.
                 e.preventDefault();
                 addTag(tag);
               }}
-              className="inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
+              onMouseEnter={() => setHighlight(i)}
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs cursor-pointer',
+                highlight === i
+                  ? 'border-solid border-primary bg-secondary text-secondary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+              )}
             >
-              <Plus className="size-3" />#{tag}
+              <Plus className="size-3" aria-hidden />#{tag}
             </button>
           ))}
         </div>
