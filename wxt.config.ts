@@ -10,6 +10,14 @@ export default defineConfig({
       'Fast, private, local-first note tracker with tags and instant search. All data stays in your browser.',
     lang: 'en',
     permissions: ['storage'],
+    browser_specific_settings: {
+      gecko: {
+        id: 'note-tracker@extension',
+        data_collection_permissions: {
+          required: ['none'],
+        },
+      },
+    },
     commands: {
       _execute_action: {
         suggested_key: {
