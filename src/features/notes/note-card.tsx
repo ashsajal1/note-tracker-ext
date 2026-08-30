@@ -44,11 +44,13 @@ export function NoteCard({ note, activeTags, onEdit, onDelete, onToggleTag }: No
         className="flex-1 p-4 pb-2 text-left focus-visible:outline-none cursor-pointer"
         title="Click to edit"
       >
-        <p className="line-clamp-8 whitespace-pre-wrap break-words text-sm leading-relaxed">
-          {previewText(note.content) || (
-            <span className="italic text-muted-foreground">Empty note</span>
-          )}
-        </p>
+        <div
+          className="note-card-content line-clamp-8 text-sm leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: note.content || '' }}
+        />
+        {!previewText(note.content) && (
+          <span className="italic text-muted-foreground">Empty note</span>
+        )}
       </button>
 
       {note.tags.length > 0 && (

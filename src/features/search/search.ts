@@ -1,4 +1,5 @@
 import { RECENT_WINDOW_MS, type Note, type Scope, type SortOption } from '@/types/note';
+import { stripHtml } from '@/utils/format';
 
 /**
  * Pure search/filter/sort logic. No storage or React dependencies —
@@ -11,11 +12,11 @@ import { RECENT_WINDOW_MS, type Note, type Scope, type SortOption } from '@/type
 
 const haystackCache = new WeakMap<Note, string>();
 
-/** content + tags, lowercased — the searchable surface of a note */
+/** content (stripped of HTML) + tags, lowercased — the searchable surface of a note */
 function haystack(note: Note): string {
   let cached = haystackCache.get(note);
   if (cached === undefined) {
-    cached = `${note.content}\n${note.tags.join('\n')}`.toLowerCase();
+    cached = `${stripHtml(note.content)}\n${note.tags.join('\n')}`.toLowerCase();
     haystackCache.set(note, cached);
   }
   return cached;
