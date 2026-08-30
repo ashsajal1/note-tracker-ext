@@ -10,6 +10,7 @@ interface NotesGridProps {
   hasFilters: boolean;
   onClearFilters: () => void;
   onCreate: () => void;
+  onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onToggleTag: (tag: string) => void;
@@ -23,6 +24,7 @@ export function NotesGrid({
   hasFilters,
   onClearFilters,
   onCreate,
+  onView,
   onEdit,
   onDelete,
   onToggleTag,
@@ -77,6 +79,7 @@ export function NotesGrid({
           key={note.id}
           note={note}
           activeTags={activeTags}
+          onView={() => onView(note.id)}
           onEdit={() => onEdit(note.id)}
           onDelete={() => onDelete(note.id)}
           onToggleTag={onToggleTag}

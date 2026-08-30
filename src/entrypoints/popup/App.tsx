@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import { ConfirmDialog, noteDeleteDescription } from '@/components/confirm-dialog';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
+import { NoteDetailView } from '@/features/notes/note-detail-view';
 import { NoteEditorDialog } from '@/features/notes/note-editor-dialog';
 import { NotesGrid } from '@/features/notes/notes-grid';
 import { SearchBar } from '@/features/search/search-bar';
@@ -47,6 +48,8 @@ export default function App() {
   const removeAllNotes = useNotesStore((s) => s.removeAllNotes);
 
   const openEditor = useUiStore((s) => s.openEditor);
+  const openDetail = useUiStore((s) => s.openDetail);
+  const detailNoteId = useUiStore((s) => s.detailNoteId);
   const deleteTargetId = useUiStore((s) => s.deleteTargetId);
   const requestDeleteNote = useUiStore((s) => s.requestDeleteNote);
   const confirmClearOpen = useUiStore((s) => s.confirmClearOpen);
@@ -67,15 +70,19 @@ export default function App() {
   return (
     <div className="flex h-full flex-col gap-3 overflow-hidden bg-background p-4 text-foreground">
       <Header resolvedTheme={resolvedTheme} />
-      <SearchBar inputRef={searchRef} />
+      {!detailNoteId && <SearchBar inputRef={searchRef} />}
 
-      <div className="space-y-2">
-        <TagFilterBar visibleCount={visibleNotes.length} />
-        <TagList />
-      </div>
+      {!detailNoteId && (
+        <div className="space-y-2">
+          <TagFilterBar visibleCount={visibleNotes.length} />
+          <TagList />
+        </div>
+      )}
 
       <main className="min-h-0 flex-1 overflow-y-auto pb-1 pr-0.5">
-        {status === 'error' ? (
+        {detailNoteId ? (
+          <NoteDetailView />
+        ) : status === 'error' ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <AlertCircle className="size-8 text-destructive" aria-hidden />
             <p className="text-sm text-muted-foreground">Could not load your notes: {error}</p>
@@ -97,6 +104,7 @@ export default function App() {
             hasFilters={query.length > 0 || tags.length > 0 || scope !== 'all'}
             onClearFilters={resetFilters}
             onCreate={newNote}
+            onView={openDetail}
             onEdit={(id) => openEditor(id)}
             onDelete={requestDeleteNote}
             onToggleTag={toggleTag}

@@ -9,12 +9,13 @@ import { formatFull, formatRelative, previewText } from '@/utils/format';
 interface NoteCardProps {
   note: Note;
   activeTags: string[];
+  onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onToggleTag: (tag: string) => void;
 }
 
-export function NoteCard({ note, activeTags, onEdit, onDelete, onToggleTag }: NoteCardProps) {
+export function NoteCard({ note, activeTags, onView, onEdit, onDelete, onToggleTag }: NoteCardProps) {
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<number | undefined>(undefined);
 
@@ -37,12 +38,12 @@ export function NoteCard({ note, activeTags, onEdit, onDelete, onToggleTag }: No
       className="group flex flex-col rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-ring"
       aria-label={`Note from ${formatRelative(note.createdAt)}`}
     >
-      {/* Clickable preview opens the editor */}
+      {/* Clickable preview opens the detail view */}
       <button
         type="button"
-        onClick={onEdit}
+        onClick={onView}
         className="flex-1 p-4 pb-2 text-left focus-visible:outline-none cursor-pointer"
-        title="Click to edit"
+        title="Click to view"
       >
         <div
           className="note-card-content line-clamp-8 text-sm leading-relaxed"
