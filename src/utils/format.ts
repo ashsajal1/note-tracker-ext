@@ -1,5 +1,15 @@
 import type { Note } from '@/types/note';
 
+/** Strip HTML tags and decode entities, returning plain text. */
+export function stripHtml(html: string): string {
+  if (typeof DOMParser !== 'undefined') {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent ?? '';
+  }
+  // Fallback for non-browser environments (e.g. tests)
+  return html.replace(/<[^>]*>/g, '');
+}
+
 /** Compact relative time: "just now", "5m ago", "3h ago", "2d ago", else a date. */
 export function formatRelative(iso: string, now: number = Date.now()): string {
   const time = Date.parse(iso);
@@ -28,10 +38,10 @@ export function formatFull(iso: string): string {
   return new Date(time).toLocaleString();
 }
 
-/** First line(s) of note content for card previews. */
+/** First line(s) of note content for card previews. Strips HTML. */
 export function previewText(content: string, maxChars = 480): string {
-  const trimmed = content.trim();
-  return trimmed.length > maxChars ? `${trimmed.slice(0, maxChars).trimEnd()}…` : trimmed;
+  const plain = stripHtml(content).trim();
+  return plain.length > maxChars ? `${plain.slice(0, maxChars).trimEnd()}…` : plain;
 }
 
 /** Aggregate tag -> usage count across notes, sorted by count desc then name. */

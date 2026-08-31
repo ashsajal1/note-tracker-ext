@@ -10,12 +10,15 @@ interface EditorState {
 
 interface UiState {
   editor: EditorState;
+  detailNoteId: string | null;
   settingsOpen: boolean;
   deleteTargetId: string | null;
   confirmClearOpen: boolean;
   theme: ThemeSetting;
   openEditor: (noteId?: string | null) => void;
   closeEditor: () => void;
+  openDetail: (noteId: string) => void;
+  closeDetail: () => void;
   setSettingsOpen: (open: boolean) => void;
   requestDeleteNote: (id: string | null) => void;
   setConfirmClearOpen: (open: boolean) => void;
@@ -24,6 +27,7 @@ interface UiState {
 
 export const useUiStore = create<UiState>()((set) => ({
   editor: { open: false, noteId: null },
+  detailNoteId: null,
   settingsOpen: false,
   deleteTargetId: null,
   confirmClearOpen: false,
@@ -31,6 +35,8 @@ export const useUiStore = create<UiState>()((set) => ({
 
   openEditor: (noteId = null) => set({ editor: { open: true, noteId } }),
   closeEditor: () => set({ editor: { open: false, noteId: null } }),
+  openDetail: (noteId) => set({ detailNoteId: noteId }),
+  closeDetail: () => set({ detailNoteId: null }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
   requestDeleteNote: (deleteTargetId) => set({ deleteTargetId }),
   setConfirmClearOpen: (confirmClearOpen) => set({ confirmClearOpen }),

@@ -10,12 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { TiptapEditor } from '@/components/ui/tiptap-editor';
 import { TagInput } from '@/features/tags/tag-input';
 import type { Note } from '@/types/note';
 import { useNotesStore } from '@/stores/notes.store';
 import { useUiStore } from '@/stores/ui.store';
-import { countTags } from '@/utils/format';
+import { countTags, stripHtml } from '@/utils/format';
 
 /**
  * Create/edit note dialog. Drafts live in local state and are seeded on
@@ -76,7 +76,7 @@ function EditorForm({ editing, allTags, onCancel, onDelete }: EditorFormProps) {
   const [tags, setTags] = useState<string[]>(editing?.tags ?? []);
   const [saving, setSaving] = useState(false);
 
-  const canSave = content.trim().length > 0 && !saving;
+  const canSave = stripHtml(content).trim().length > 0 && !saving;
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -116,13 +116,10 @@ function EditorForm({ editing, allTags, onCancel, onDelete }: EditorFormProps) {
       </DialogHeader>
 
       <div className="grid gap-3">
-        <Textarea
-          autoFocus
+        <TiptapEditor
+          content={content}
+          onChange={setContent}
           placeholder="Write your note…"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          aria-label="Note content"
-          className="min-h-44 text-sm leading-relaxed"
         />
         <div>
           <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Tags</label>
