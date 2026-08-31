@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countTags, formatRelative, previewText } from '@/utils/format';
+import { countTags, formatFull, formatRelative, previewText } from '@/utils/format';
 import { dedupeTags, normalizeTag, parseTagInput } from '@/utils/tags';
 
 describe('normalizeTag', () => {
@@ -55,6 +55,21 @@ describe('previewText', () => {
     expect(previewText('a'.repeat(400))).toBe('a'.repeat(400));
     expect(previewText('a'.repeat(500))).toBe(`${'a'.repeat(480)}…`);
   });
+
+  it('strips HTML tags from content', () => {
+    expect(previewText('<p>hello</p>')).toBe('hello');
+    expect(previewText('<p><strong>bold</strong> text</p>')).toBe('bold text');
+  });
+
+  it('handles empty HTML content', () => {
+    expect(previewText('<p></p>')).toBe('');
+    expect(previewText('<div><br/></div>')).toBe('');
+  });
+
+  it('truncates HTML content after stripping tags', () => {
+    const html = `<p>${'a'.repeat(500)}</p>`;
+    expect(previewText(html)).toBe(`${'a'.repeat(480)}…`);
+  });
 });
 
 describe('countTags', () => {
@@ -67,5 +82,16 @@ describe('countTags', () => {
       { tag: 'a', count: 2 },
       { tag: 'z', count: 1 },
     ]);
+  });
+});
+
+describe('formatFull', () => {
+  it('returns a locale string for valid dates', () => {
+    expect(formatFull('2026-01-15T10:30:00Z')).toBeTruthy();
+    expect(typeof formatFull('2026-01-15T10:30:00Z')).toBe('string');
+  });
+
+  it('returns empty string for invalid dates', () => {
+    expect(formatFull('not-a-date')).toBe('');
   });
 });
