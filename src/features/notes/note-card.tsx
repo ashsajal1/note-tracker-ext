@@ -1,8 +1,9 @@
-import { Pencil, Trash2, Undo2 } from 'lucide-react';
+import { Pin, Pencil, Trash2, Undo2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useHorizontalScroll } from '@/hooks/use-horizontal-scroll';
 import type { Note } from '@/types/note';
+import { cn } from '@/utils/cn';
 import { formatFull, formatRelative, previewText } from '@/utils/format';
 import { CopyNoteMenu } from './copy-note-menu';
 
@@ -17,6 +18,7 @@ interface NoteCardProps {
   mode?: 'active' | 'trash';
   onRestore?: () => void;
   onPurge?: () => void;
+  onTogglePin?: () => void;
 }
 
 export function NoteCard({
@@ -29,6 +31,7 @@ export function NoteCard({
   mode = 'active',
   onRestore,
   onPurge,
+  onTogglePin,
 }: NoteCardProps) {
   const { ref: tagsScrollRef, atStart, atEnd } = useHorizontalScroll<HTMLDivElement>();
   const trashed = mode === 'trash';
@@ -143,6 +146,16 @@ export function NoteCard({
             </>
           ) : (
             <>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={onTogglePin}
+                aria-label={note.pinned ? 'Unpin note' : 'Pin note'}
+                aria-pressed={note.pinned}
+                title={note.pinned ? 'Unpin' : 'Pin to top'}
+              >
+                <Pin className={cn('size-3.5', note.pinned && 'fill-current')} />
+              </Button>
               <CopyNoteMenu contentHtml={note.content} />
               <Button
                 variant="ghost"

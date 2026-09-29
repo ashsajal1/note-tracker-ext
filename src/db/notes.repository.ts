@@ -75,6 +75,17 @@ export async function purgeDeletedNotes(cutoffIso: string): Promise<number> {
   return db.notes.where('deletedAt').below(cutoffIso).delete();
 }
 
+/** Flip the pinned flag. */
+export async function togglePinNote(id: string): Promise<Note | undefined> {
+  return db.transaction('rw', db.notes, async () => {
+    const existing = await db.notes.get(id);
+    if (!existing) return undefined;
+    const next = normalize({ ...existing, pinned: !existing.pinned });
+    await db.notes.put(next);
+    return next;
+  });
+}
+
 export async function clearAllNotes(): Promise<void> {
   await db.notes.clear();
 }

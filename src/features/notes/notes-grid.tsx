@@ -19,6 +19,7 @@ interface NotesGridProps {
   onRestore?: (id: string) => void;
   onPurge?: (id: string) => void;
   onEmptyTrash?: () => void;
+  onTogglePin?: (id: string) => void;
 }
 
 export function NotesGrid({
@@ -37,6 +38,7 @@ export function NotesGrid({
   onRestore,
   onPurge,
   onEmptyTrash,
+  onTogglePin,
 }: NotesGridProps) {
   if (loading) return <GridSkeleton />;
 
@@ -142,6 +144,7 @@ export function NotesGrid({
           onEdit={() => onEdit(note.id)}
           onDelete={() => onDelete(note.id)}
           onToggleTag={onToggleTag}
+          onTogglePin={() => onTogglePin?.(note.id)}
         />
       ))}
     </div>

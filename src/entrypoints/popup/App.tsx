@@ -49,6 +49,7 @@ export default function App() {
   const removeNote = useNotesStore((s) => s.removeNote);
   const trashNote = useNotesStore((s) => s.trashNote);
   const restoreNote = useNotesStore((s) => s.restoreNote);
+  const togglePin = useNotesStore((s) => s.togglePin);
   const emptyTrash = useNotesStore((s) => s.emptyTrash);
   const removeAllNotes = useNotesStore((s) => s.removeAllNotes);
 
@@ -152,6 +153,7 @@ export default function App() {
             onDelete={requestDeleteNote}
             onToggleTag={toggleTag}
             activeTags={tags}
+            onTogglePin={(id) => void togglePin(id)}
           />
         )}
       </main>

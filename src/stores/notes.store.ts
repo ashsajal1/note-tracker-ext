@@ -20,6 +20,8 @@ interface NotesState {
   removeNote: (id: string) => Promise<void>;
   /** Permanently delete every trashed note. */
   emptyTrash: () => Promise<void>;
+  /** Flip the pinned flag. */
+  togglePin: (id: string) => Promise<void>;
   removeAllNotes: () => Promise<void>;
   importNotes: (notes: Note[]) => Promise<void>;
 }
@@ -84,6 +86,12 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
     const trashed = get().notes.filter((n) => n.deletedAt != null);
     await Promise.all(trashed.map((n) => repo.deleteNote(n.id)));
     set((s) => ({ notes: s.notes.filter((n) => n.deletedAt == null) }));
+  },
+
+  togglePin: async (id) => {
+    const updated = await repo.togglePinNote(id);
+    if (!updated) return;
+    set((s) => ({ notes: s.notes.map((n) => (n.id === id ? updated : n)) }));
   },
 
   removeAllNotes: async () => {

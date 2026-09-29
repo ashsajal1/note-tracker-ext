@@ -72,14 +72,16 @@ export function sortNotes(notes: Note[], sort: SortOption): Note[] {
     const tb = Date.parse(b[field]) || 0;
     return tb - ta; // desc
   };
+  const byPinned = (a: Note, b: Note): number =>
+    Number(b.pinned ?? false) - Number(a.pinned ?? false);
   switch (sort) {
     case 'created-asc':
-      return sorted.sort((a, b) => -byDate(a, b, 'createdAt'));
+      return sorted.sort((a, b) => byPinned(a, b) || -byDate(a, b, 'createdAt'));
     case 'updated-desc':
-      return sorted.sort((a, b) => byDate(a, b, 'updatedAt'));
+      return sorted.sort((a, b) => byPinned(a, b) || byDate(a, b, 'updatedAt'));
     case 'created-desc':
     default:
-      return sorted.sort((a, b) => byDate(a, b, 'createdAt'));
+      return sorted.sort((a, b) => byPinned(a, b) || byDate(a, b, 'createdAt'));
   }
 }
 

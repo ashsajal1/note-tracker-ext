@@ -168,6 +168,19 @@ describe('sortNotes / filterAndSortNotes', () => {
     );
     expect(result.map((n) => n.id)).toEqual(['4', '3', '1', '2']);
   });
+
+  it('sorts pinned notes first regardless of date', () => {
+    const pinned = note({
+      id: 'p',
+      content: 'old but pinned',
+      createdAt: '2020-01-01T00:00:00Z',
+      updatedAt: '2020-01-01T00:00:00Z',
+      pinned: true,
+    });
+    expect(sortNotes([...NOTES, pinned], 'created-desc')[0]!.id).toBe('p');
+    expect(sortNotes([...NOTES, pinned], 'created-asc')[0]!.id).toBe('p');
+    expect(sortNotes([...NOTES, pinned], 'updated-desc')[0]!.id).toBe('p');
+  });
 });
 
 describe('trash exclusion', () => {

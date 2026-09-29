@@ -1,10 +1,11 @@
-import { ArrowLeft, Pencil, Trash2, Undo2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Pin, Trash2, Undo2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNotesStore } from '@/stores/notes.store';
 import { useUiStore } from '@/stores/ui.store';
 import { formatFull, formatRelative, previewText } from '@/utils/format';
+import { cn } from '@/utils/cn';
 import { CopyNoteMenu } from './copy-note-menu';
 
 export function NoteDetailView() {
@@ -16,6 +17,7 @@ export function NoteDetailView() {
 
   const notes = useNotesStore((s) => s.notes);
   const restoreNote = useNotesStore((s) => s.restoreNote);
+  const togglePin = useNotesStore((s) => s.togglePin);
 
   const note = useMemo(
     () => (detailNoteId ? (notes.find((n) => n.id === detailNoteId) ?? null) : null),
@@ -72,6 +74,16 @@ export function NoteDetailView() {
             </>
           ) : (
             <>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => togglePin(note.id)}
+                aria-label={note.pinned ? 'Unpin note' : 'Pin note'}
+                aria-pressed={note.pinned}
+                title={note.pinned ? 'Unpin' : 'Pin to top'}
+              >
+                <Pin className={cn('size-3.5', note.pinned && 'fill-current')} />
+              </Button>
               <CopyNoteMenu contentHtml={note.content} />
               <Button
                 variant="ghost"
