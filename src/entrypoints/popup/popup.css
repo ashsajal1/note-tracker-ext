@@ -179,3 +179,13 @@ body {
 .dark .tiptap [style*='color'] {
   color: inherit !important;
 }
+
+/* Single-row tag strip: horizontal scroll without a visible scrollbar. */
+.tags-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tags-scroll::-webkit-scrollbar {
+  display: none;
+}

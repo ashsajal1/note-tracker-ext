@@ -66,7 +66,7 @@ export function NoteDetailView() {
       </header>
 
       {/* Content */}
-      <main className="min-h-0 flex-1 overflow-y-auto py-3">
+      <main className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         <div
           className="note-card-content text-sm leading-relaxed"
           dangerouslySetInnerHTML={{ __html: note.content || '' }}
