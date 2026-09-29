@@ -28,6 +28,9 @@ interface TiptapEditorProps {
   content?: string;
   onChange?: (html: string) => void;
   placeholder?: string;
+  autoFocus?: boolean;
+  /** 'boxed' renders the bordered card; 'plain' makes the page itself the form. */
+  chrome?: 'boxed' | 'plain';
 }
 
 function ToolbarButton({
@@ -62,9 +65,14 @@ function ToolbarButton({
   );
 }
 
-function Toolbar({ editor }: { editor: Editor }) {
+function Toolbar({ editor, plain = false }: { editor: Editor; plain?: boolean }) {
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b border-border px-2 py-1">
+    <div
+      className={cn(
+        'flex flex-wrap items-center gap-0.5 px-2 py-1',
+        plain ? 'rounded-md bg-secondary/60' : 'border-b border-border',
+      )}
+    >
       <ToolbarButton
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().undo()}
@@ -186,9 +194,12 @@ export function TiptapEditor({
   content = '',
   onChange,
   placeholder = 'Start writing…',
+  autoFocus = false,
+  chrome = 'boxed',
 }: TiptapEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
+    autofocus: autoFocus,
     extensions: [
       StarterKit,
       Highlight.configure({ multicolor: true }),
@@ -203,7 +214,10 @@ export function TiptapEditor({
     },
     editorProps: {
       attributes: {
-        class: 'tiptap min-h-[120px] px-3 py-2 text-sm leading-relaxed focus:outline-none',
+        class:
+          chrome === 'plain'
+            ? 'tiptap min-h-[220px] px-1 py-2 text-[15px] leading-relaxed focus:outline-none'
+            : 'tiptap min-h-[120px] px-3 py-2 text-sm leading-relaxed focus:outline-none',
       },
       // External sources often paste `color: #000` / `color: black` inline
       // styles that turn invisible in dark mode. Strip text color on paste
@@ -212,10 +226,18 @@ export function TiptapEditor({
     },
   });
 
+  const plain = chrome === 'plain';
+
   return (
-    <div className="overflow-hidden rounded-md border border-input shadow-sm focus-within:ring-2 focus-within:ring-ring">
-      {editor && <Toolbar editor={editor} />}
-      <div className="max-h-[300px] overflow-y-auto">
+    <div
+      className={
+        plain
+          ? 'flex flex-col gap-2'
+          : 'overflow-hidden rounded-md border border-input bg-card shadow-sm focus-within:ring-2 focus-within:ring-ring'
+      }
+    >
+      {editor && <Toolbar editor={editor} plain={plain} />}
+      <div className={plain ? undefined : 'max-h-[300px] overflow-y-auto'}>
         <EditorContent editor={editor} />
       </div>
     </div>

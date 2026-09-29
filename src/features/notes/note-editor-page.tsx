@@ -157,6 +157,7 @@ function EditorForm({
             onChange={setContent}
             placeholder="Write your note…"
             autoFocus={!editing}
+            chrome="plain"
           />
         </section>
         <section aria-label="Note tags">
