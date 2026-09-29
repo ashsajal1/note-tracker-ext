@@ -21,6 +21,7 @@ import { TextStyle, Color } from '@tiptap/extension-text-style';
 import UnderlineExt from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import { cn } from '@/utils/cn';
+import { sanitizePastedHtml } from '@/utils/clipboard';
 import '@/components/ui/tiptap.css';
 
 interface TiptapEditorProps {
@@ -204,6 +205,10 @@ export function TiptapEditor({
       attributes: {
         class: 'tiptap min-h-[120px] px-3 py-2 text-sm leading-relaxed focus:outline-none',
       },
+      // External sources often paste `color: #000` / `color: black` inline
+      // styles that turn invisible in dark mode. Strip text color on paste
+      // so pasted content inherits the theme foreground.
+      transformPastedHTML: (html) => sanitizePastedHtml(html),
     },
   });
 

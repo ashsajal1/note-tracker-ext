@@ -169,3 +169,13 @@ body {
 .note-card-content mark {
   border-radius: 0.0625rem;
 }
+
+/* Pasted rich text often carries inline `color: #000` / `color: black`
+   which is unreadable on the dark card background. Notes saved before
+   the paste sanitizer still contain those styles, so force theme
+   foreground in dark mode. Editor highlights (<mark>) are unaffected
+   since they use background, not text color. */
+.dark .note-card-content [style*='color'],
+.dark .tiptap [style*='color'] {
+  color: inherit !important;
+}

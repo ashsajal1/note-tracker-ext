@@ -1,10 +1,12 @@
-import { Check, Copy, Pencil, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Note } from '@/types/note';
 import { formatFull, formatRelative, previewText } from '@/utils/format';
+import { CopyNoteMenu } from './copy-note-menu';
+
+/** Max tags shown inline before collapsing the rest into a "+N" badge. */
+const MAX_VISIBLE_TAGS = 3;
 
 interface NoteCardProps {
   note: Note;
@@ -16,22 +18,8 @@ interface NoteCardProps {
 }
 
 export function NoteCard({ note, activeTags, onView, onEdit, onDelete, onToggleTag }: NoteCardProps) {
-  const [copied, setCopied] = useState(false);
-  const copyTimer = useRef<number | undefined>(undefined);
-
-  useEffect(() => () => window.clearTimeout(copyTimer.current), []);
-
-  const copyNote = async () => {
-    try {
-      await navigator.clipboard.writeText(note.content);
-      setCopied(true);
-      window.clearTimeout(copyTimer.current);
-      copyTimer.current = window.setTimeout(() => setCopied(false), 1500);
-      toast.success('Note copied to clipboard');
-    } catch {
-      toast.error('Could not access the clipboard');
-    }
-  };
+  const visibleTags = note.tags.slice(0, MAX_VISIBLE_TAGS);
+  const hiddenTags = note.tags.slice(MAX_VISIBLE_TAGS);
 
   return (
     <article
@@ -55,8 +43,8 @@ export function NoteCard({ note, activeTags, onView, onEdit, onDelete, onToggleT
       </button>
 
       {note.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 px-4 pt-1">
-          {note.tags.map((tag) => {
+        <div className="flex items-center gap-1 overflow-hidden px-4 pt-1" aria-label="Note tags">
+          {visibleTags.map((tag) => {
             const active = activeTags.includes(tag);
             return (
               <Badge
@@ -65,11 +53,22 @@ export function NoteCard({ note, activeTags, onView, onEdit, onDelete, onToggleT
                 onClick={() => onToggleTag(tag)}
                 aria-pressed={active}
                 title={`Filter by #${tag}`}
+                className="max-w-[96px] shrink-0 truncate"
               >
                 #{tag}
               </Badge>
             );
           })}
+          {hiddenTags.length > 0 && (
+            <Badge
+              variant="secondary"
+              onClick={onView}
+              title={`More tags: ${hiddenTags.map((t) => `#${t}`).join(', ')} (click to view)`}
+              className="shrink-0 cursor-pointer"
+            >
+              +{hiddenTags.length}
+            </Badge>
+          )}
         </div>
       )}
 
@@ -82,19 +81,7 @@ export function NoteCard({ note, activeTags, onView, onEdit, onDelete, onToggleT
           Updated {formatRelative(note.updatedAt)}
         </time>
         <div className="flex items-center gap-0.5 opacity-70 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={copyNote}
-            aria-label="Copy note content"
-            title="Copy content"
-          >
-            {copied ? (
-              <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-            ) : (
-              <Copy className="size-3.5" />
-            )}
-          </Button>
+          <CopyNoteMenu contentHtml={note.content} />
           <Button
             variant="ghost"
             size="icon-sm"

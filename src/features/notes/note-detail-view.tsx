@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useNotesStore } from '@/stores/notes.store';
 import { useUiStore } from '@/stores/ui.store';
 import { formatFull, previewText } from '@/utils/format';
+import { CopyNoteMenu } from './copy-note-menu';
 
 export function NoteDetailView() {
   const detailNoteId = useUiStore((s) => s.detailNoteId);
@@ -35,6 +36,7 @@ export function NoteDetailView() {
           <ArrowLeft className="size-4" />
         </Button>
         <div className="ml-auto flex items-center gap-1">
+          <CopyNoteMenu contentHtml={note.content} />
           <Button
             variant="ghost"
             size="icon-sm"

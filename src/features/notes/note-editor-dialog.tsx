@@ -1,5 +1,5 @@
 import { Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -75,11 +75,17 @@ function EditorForm({ editing, allTags, onCancel, onDelete }: EditorFormProps) {
   const [content, setContent] = useState(editing?.content ?? '');
   const [tags, setTags] = useState<string[]>(editing?.tags ?? []);
   const [saving, setSaving] = useState(false);
+  // Sync ref guard: React state updates async, so a rapid double-click /
+  // double Ctrl+Enter could fire handleSave twice before `saving` flips.
+  // The ref flips synchronously, guaranteeing a single create/update.
+  const savingRef = useRef(false);
 
   const canSave = stripHtml(content).trim().length > 0 && !saving;
 
   const handleSave = async () => {
-    if (!canSave) return;
+    if (savingRef.current) return;
+    if (stripHtml(content).trim().length === 0) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       if (editing) {
@@ -92,6 +98,7 @@ function EditorForm({ editing, allTags, onCancel, onDelete }: EditorFormProps) {
       onCancel();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save the note');
+      savingRef.current = false;
       setSaving(false);
     }
   };
