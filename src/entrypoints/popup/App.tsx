@@ -5,7 +5,7 @@ import { ConfirmDialog, noteDeleteDescription } from '@/components/confirm-dialo
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { NoteDetailView } from '@/features/notes/note-detail-view';
-import { NoteEditorDialog } from '@/features/notes/note-editor-dialog';
+import { NoteEditorPage } from '@/features/notes/note-editor-page';
 import { NotesGrid } from '@/features/notes/notes-grid';
 import { SearchBar } from '@/features/search/search-bar';
 import { SettingsDialog } from '@/features/settings/settings-dialog';
@@ -50,6 +50,7 @@ export default function App() {
   const openEditor = useUiStore((s) => s.openEditor);
   const openDetail = useUiStore((s) => s.openDetail);
   const detailNoteId = useUiStore((s) => s.detailNoteId);
+  const editorOpen = useUiStore((s) => s.editor.open);
   const deleteTargetId = useUiStore((s) => s.deleteTargetId);
   const requestDeleteNote = useUiStore((s) => s.requestDeleteNote);
   const confirmClearOpen = useUiStore((s) => s.confirmClearOpen);
@@ -70,9 +71,9 @@ export default function App() {
   return (
     <div className="flex h-full flex-col gap-3 overflow-hidden bg-background p-4 text-foreground">
       <Header resolvedTheme={resolvedTheme} />
-      {!detailNoteId && <SearchBar inputRef={searchRef} />}
+      {!detailNoteId && !editorOpen && <SearchBar inputRef={searchRef} />}
 
-      {!detailNoteId && (
+      {!detailNoteId && !editorOpen && (
         <div className="space-y-2">
           <TagFilterBar visibleCount={visibleNotes.length} />
           <TagList />
@@ -80,7 +81,9 @@ export default function App() {
       )}
 
       <main className="min-h-0 flex-1 overflow-y-auto pb-1 pr-0.5">
-        {detailNoteId ? (
+        {editorOpen ? (
+          <NoteEditorPage />
+        ) : detailNoteId ? (
           <NoteDetailView />
         ) : status === 'error' ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
@@ -114,7 +117,6 @@ export default function App() {
       </main>
 
       {/* Dialogs */}
-      <NoteEditorDialog />
       <SettingsDialog />
       <ConfirmDialog
         open={deleteTarget != null}
