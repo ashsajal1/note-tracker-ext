@@ -8,11 +8,14 @@ interface FiltersState {
   tags: string[];
   scope: Scope;
   sort: SortOption;
+  /** trash view instead of the notes grid */
+  trashOpen: boolean;
   setQuery: (query: string) => void;
   toggleTag: (tag: string) => void;
   clearTags: () => void;
   setScope: (scope: Scope) => void;
   setSort: (sort: SortOption) => void;
+  setTrashOpen: (open: boolean) => void;
   resetFilters: () => void;
 }
 
@@ -21,6 +24,7 @@ export const useFiltersStore = create<FiltersState>()((set, get) => ({
   tags: [],
   scope: 'all',
   sort: 'created-desc',
+  trashOpen: false,
 
   setQuery: (query) => set({ query }),
 
@@ -34,6 +38,8 @@ export const useFiltersStore = create<FiltersState>()((set, get) => ({
   setScope: (scope) => set({ scope }),
 
   setSort: (sort) => set({ sort }),
+
+  setTrashOpen: (trashOpen) => set({ trashOpen }),
 
   resetFilters: () => set({ query: '', tags: [], scope: 'all', sort: get().sort }),
 }));

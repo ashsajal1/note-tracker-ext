@@ -75,8 +75,8 @@ describe('previewText', () => {
 describe('countTags', () => {
   it('counts usage and sorts by count desc then name', () => {
     const counts = countTags([
-      { id: '1', content: '', tags: ['z', 'a'], createdAt: '', updatedAt: '' },
-      { id: '2', content: '', tags: ['a'], createdAt: '', updatedAt: '' },
+      { id: '1', content: '', tags: ['z', 'a'], createdAt: '', updatedAt: '', deletedAt: null, pinned: false },
+      { id: '2', content: '', tags: ['a'], createdAt: '', updatedAt: '', deletedAt: null, pinned: false },
     ]);
     expect(counts).toEqual([
       { tag: 'a', count: 2 },

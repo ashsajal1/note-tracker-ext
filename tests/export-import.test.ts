@@ -12,6 +12,8 @@ describe('buildExportPayload', () => {
       tags: ['x'],
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z',
+      deletedAt: null,
+      pinned: false,
     };
     const payload = buildExportPayload([note]);
     expect(payload.app).toBe('note-tracker');
@@ -28,6 +30,8 @@ describe('parseImportPayload', () => {
     tags: ['work'],
     createdAt: '2026-05-01T10:00:00Z',
     updatedAt: '2026-05-02T10:00:00Z',
+    deletedAt: null,
+    pinned: false,
   };
 
   it('accepts the export format', () => {
@@ -77,5 +81,26 @@ describe('parseImportPayload', () => {
     expect(() => parseImportPayload({ foo: 'bar' })).toThrow(/notes/);
     expect(() => parseImportPayload('nope')).toThrow(/notes/);
     expect(() => parseImportPayload(null)).toThrow();
+  });
+
+  it('defaults deletedAt/pinned for legacy backups', () => {
+    const result = parseImportPayload([{ id: 'x', content: 'y' }], NOW);
+    expect(result.notes[0]).toMatchObject({ deletedAt: null, pinned: false });
+  });
+
+  it('preserves valid deletedAt and pinned flags', () => {
+    const result = parseImportPayload(
+      [{ ...base, deletedAt: '2026-08-01T00:00:00Z', pinned: true }],
+      NOW,
+    );
+    expect(result.notes[0]).toMatchObject({
+      deletedAt: '2026-08-01T00:00:00Z',
+      pinned: true,
+    });
+  });
+
+  it('drops invalid deletedAt values', () => {
+    const result = parseImportPayload([{ ...base, deletedAt: 'yesterday' }], NOW);
+    expect(result.notes[0]?.deletedAt).toBeNull();
   });
 });

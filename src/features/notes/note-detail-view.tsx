@@ -1,10 +1,10 @@
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Undo2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNotesStore } from '@/stores/notes.store';
 import { useUiStore } from '@/stores/ui.store';
-import { formatFull, previewText } from '@/utils/format';
+import { formatFull, formatRelative, previewText } from '@/utils/format';
 import { CopyNoteMenu } from './copy-note-menu';
 
 export function NoteDetailView() {
@@ -12,8 +12,10 @@ export function NoteDetailView() {
   const closeDetail = useUiStore((s) => s.closeDetail);
   const openEditor = useUiStore((s) => s.openEditor);
   const requestDeleteNote = useUiStore((s) => s.requestDeleteNote);
+  const requestPurgeNote = useUiStore((s) => s.requestPurgeNote);
 
   const notes = useNotesStore((s) => s.notes);
+  const restoreNote = useNotesStore((s) => s.restoreNote);
 
   const note = useMemo(
     () => (detailNoteId ? (notes.find((n) => n.id === detailNoteId) ?? null) : null),
@@ -21,6 +23,8 @@ export function NoteDetailView() {
   );
 
   if (!note) return null;
+
+  const trashed = note.deletedAt != null;
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -35,33 +39,67 @@ export function NoteDetailView() {
         >
           <ArrowLeft className="size-4" />
         </Button>
+        {trashed && note.deletedAt && (
+          <span className="text-[11px] text-muted-foreground">
+            Deleted {formatRelative(note.deletedAt)}
+          </span>
+        )}
         <div className="ml-auto flex items-center gap-1">
-          <CopyNoteMenu contentHtml={note.content} />
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => {
-              closeDetail();
-              openEditor(note.id);
-            }}
-            aria-label="Edit note"
-            title="Edit"
-          >
-            <Pencil className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => {
-              closeDetail();
-              requestDeleteNote(note.id);
-            }}
-            aria-label="Delete note"
-            title="Delete"
-            className="hover:bg-destructive/10 hover:text-destructive"
-          >
-            <Trash2 className="size-3.5" />
-          </Button>
+          {trashed ? (
+            <>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => restoreNote(note.id)}
+                aria-label="Restore note"
+                title="Restore"
+              >
+                <Undo2 className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => {
+                  closeDetail();
+                  requestPurgeNote(note.id);
+                }}
+                aria-label="Delete forever"
+                title="Delete forever"
+                className="hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <CopyNoteMenu contentHtml={note.content} />
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => {
+                  closeDetail();
+                  openEditor(note.id);
+                }}
+                aria-label="Edit note"
+                title="Edit"
+              >
+                <Pencil className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => {
+                  closeDetail();
+                  requestDeleteNote(note.id);
+                }}
+                aria-label="Delete note"
+                title="Move to trash"
+                className="hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </>
+          )}
         </div>
       </header>
 

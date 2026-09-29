@@ -1,4 +1,4 @@
-import { ArrowUpDown, Check, X } from 'lucide-react';
+import { ArrowUpDown, Check, Trash2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SORT_OPTIONS, type Scope, type SortOption } from '@/types/note';
 import { useFiltersStore } from '@/stores/filters.store';
+import { useNotesStore } from '@/stores/notes.store';
 import { cn } from '@/utils/cn';
 
 const SCOPES: { value: Scope; label: string }[] = [
@@ -31,6 +32,9 @@ export function TagFilterBar({ visibleCount }: TagFilterBarProps) {
   const clearTags = useFiltersStore((s) => s.clearTags);
   const query = useFiltersStore((s) => s.query);
   const setQuery = useFiltersStore((s) => s.setQuery);
+  const trashOpen = useFiltersStore((s) => s.trashOpen);
+  const setTrashOpen = useFiltersStore((s) => s.setTrashOpen);
+  const trashCount = useNotesStore((s) => s.notes.filter((n) => n.deletedAt != null).length);
 
   const hasActiveFilters = tags.length > 0 || query.length > 0 || scope !== 'all';
 
@@ -90,9 +94,21 @@ export function TagFilterBar({ visibleCount }: TagFilterBarProps) {
           </Button>
         )}
 
+        {/* Trash */}
+        <Button
+          variant={trashOpen ? 'secondary' : 'ghost'}
+          size="sm"
+          className="h-7 gap-1.5 text-xs tabular-nums"
+          onClick={() => setTrashOpen(!trashOpen)}
+          aria-pressed={trashOpen}
+          title={trashOpen ? 'Back to notes' : 'Open trash'}
+        >
+          <Trash2 className="size-3" aria-hidden />
+          {trashOpen ? 'Notes' : trashCount > 0 ? `Trash · ${trashCount}` : 'Trash'}
+        </Button>
+
         {/* Sort */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <DropdownMenu>          <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs">
               <ArrowUpDown className="size-3" aria-hidden />
               {SORT_OPTIONS.find((o) => o.value === sort)?.label}

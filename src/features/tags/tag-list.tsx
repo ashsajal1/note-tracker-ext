@@ -3,6 +3,7 @@ import { useHorizontalScroll } from '@/hooks/use-horizontal-scroll';
 import { useFiltersStore } from '@/stores/filters.store';
 import { useNotesStore } from '@/stores/notes.store';
 import { countTags } from '@/utils/format';
+import { activeNotes } from '@/utils/notes';
 
 /** Single-row scrollable chip list of every tag with usage counts. Click to filter. */
 export function TagList() {
@@ -10,7 +11,7 @@ export function TagList() {
   const activeTags = useFiltersStore((s) => s.tags);
   const toggleTag = useFiltersStore((s) => s.toggleTag);
 
-  const tags = countTags(notes);
+  const tags = countTags(activeNotes(notes));
   const { ref, atStart, atEnd } = useHorizontalScroll<HTMLElement>();
   if (tags.length === 0) return null;
 

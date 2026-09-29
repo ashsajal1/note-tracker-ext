@@ -13,6 +13,8 @@ function note(partial: Partial<Note> & { id: string; content: string }): Note {
     tags: [],
     createdAt: '2026-01-01T10:00:00.000Z',
     updatedAt: '2026-01-01T10:00:00.000Z',
+    deletedAt: null,
+    pinned: false,
     ...partial,
   };
 }
@@ -165,5 +167,34 @@ describe('sortNotes / filterAndSortNotes', () => {
       NOW,
     );
     expect(result.map((n) => n.id)).toEqual(['4', '3', '1', '2']);
+  });
+});
+
+describe('trash exclusion', () => {
+  const trashed = note({
+    id: 't',
+    content: 'trashed milk note',
+    deletedAt: '2026-08-19T10:00:00Z',
+  });
+
+  it('excludes trashed notes by default', () => {
+    const result = filterNotes([...NOTES, trashed], {
+      query: 'milk',
+      tags: [],
+      scope: 'all',
+      sort: 'created-desc',
+    });
+    expect(result.map((n) => n.id)).toEqual(['1']);
+  });
+
+  it('includes trashed notes with includeDeleted', () => {
+    const result = filterNotes([...NOTES, trashed], {
+      query: 'milk',
+      tags: [],
+      scope: 'all',
+      sort: 'created-desc',
+      includeDeleted: true,
+    });
+    expect(result.map((n) => n.id).sort()).toEqual(['1', 't']);
   });
 });

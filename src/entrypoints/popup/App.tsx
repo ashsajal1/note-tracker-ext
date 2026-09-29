@@ -1,5 +1,5 @@
 import { AlertCircle } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Toaster } from 'sonner';
 import { ConfirmDialog, noteDeleteDescription } from '@/components/confirm-dialog';
 import { Header } from '@/components/header';
@@ -14,10 +14,11 @@ import { TagList } from '@/features/tags/tag-list';
 import { useAppShortcuts } from '@/hooks/use-app-shortcuts';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useTheme } from '@/hooks/use-theme';
-import { filterAndSortNotes } from '@/features/search/search';
+import { filterAndSortNotes, matchesQuery, tokenizeQuery } from '@/features/search/search';
 import { useFiltersStore } from '@/stores/filters.store';
 import { useNotesStore } from '@/stores/notes.store';
 import { useUiStore } from '@/stores/ui.store';
+import { activeNotes, trashedNotes } from '@/utils/notes';
 
 const SEARCH_DEBOUNCE_MS = 120;
 
@@ -39,12 +40,16 @@ export default function App() {
   const tags = useFiltersStore((s) => s.tags);
   const scope = useFiltersStore((s) => s.scope);
   const sort = useFiltersStore((s) => s.sort);
+  const trashOpen = useFiltersStore((s) => s.trashOpen);
   const resetFilters = useFiltersStore((s) => s.resetFilters);
   const toggleTag = useFiltersStore((s) => s.toggleTag);
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
 
   const notes = useNotesStore((s) => s.notes);
   const removeNote = useNotesStore((s) => s.removeNote);
+  const trashNote = useNotesStore((s) => s.trashNote);
+  const restoreNote = useNotesStore((s) => s.restoreNote);
+  const emptyTrash = useNotesStore((s) => s.emptyTrash);
   const removeAllNotes = useNotesStore((s) => s.removeAllNotes);
 
   const openEditor = useUiStore((s) => s.openEditor);
@@ -53,6 +58,8 @@ export default function App() {
   const editorOpen = useUiStore((s) => s.editor.open);
   const deleteTargetId = useUiStore((s) => s.deleteTargetId);
   const requestDeleteNote = useUiStore((s) => s.requestDeleteNote);
+  const purgeTargetId = useUiStore((s) => s.purgeTargetId);
+  const requestPurgeNote = useUiStore((s) => s.requestPurgeNote);
   const confirmClearOpen = useUiStore((s) => s.confirmClearOpen);
   const setConfirmClearOpen = useUiStore((s) => s.setConfirmClearOpen);
 
@@ -61,12 +68,27 @@ export default function App() {
     [notes, debouncedQuery, tags, scope, sort],
   );
 
+  // Trash view: trashed notes matching the same query/tag filters.
+  const visibleTrash = useMemo(() => {
+    const tokens = tokenizeQuery(debouncedQuery);
+    return trashedNotes(notes).filter(
+      (n) =>
+        tags.every((t) => n.tags.includes(t)) && matchesQuery(n, tokens),
+    );
+  }, [notes, debouncedQuery, tags]);
+
   const focusSearch = useCallback(() => searchRef.current?.focus(), []);
   const newNote = useCallback(() => openEditor(null), [openEditor]);
   useAppShortcuts({ onFocusSearch: focusSearch, onNewNote: newNote });
 
+  const [confirmEmptyTrashOpen, setConfirmEmptyTrashOpen] = useState(false);
+
+  const activeCount = useMemo(() => activeNotes(notes).length, [notes]);
+
   const deleteTarget =
     deleteTargetId != null ? (notes.find((n) => n.id === deleteTargetId) ?? null) : null;
+  const purgeTarget =
+    purgeTargetId != null ? (notes.find((n) => n.id === purgeTargetId) ?? null) : null;
 
   return (
     <div className="flex h-full flex-col gap-3 overflow-hidden bg-background p-4 text-foreground">
@@ -85,6 +107,24 @@ export default function App() {
           <NoteEditorPage />
         ) : detailNoteId ? (
           <NoteDetailView />
+        ) : trashOpen ? (
+          <NotesGrid
+            mode="trash"
+            notes={visibleTrash}
+            allCount={visibleTrash.length}
+            loading={status !== 'ready'}
+            hasFilters={query.length > 0 || tags.length > 0}
+            onClearFilters={resetFilters}
+            onCreate={newNote}
+            onView={openDetail}
+            onEdit={(id) => void restoreNote(id)}
+            onDelete={requestPurgeNote}
+            onToggleTag={toggleTag}
+            activeTags={tags}
+            onRestore={(id) => void restoreNote(id)}
+            onPurge={requestPurgeNote}
+            onEmptyTrash={() => setConfirmEmptyTrashOpen(true)}
+          />
         ) : status === 'error' ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <AlertCircle className="size-8 text-destructive" aria-hidden />
@@ -102,7 +142,7 @@ export default function App() {
         ) : (
           <NotesGrid
             notes={visibleNotes}
-            allCount={notes.length}
+            allCount={activeCount}
             loading={status !== 'ready'}
             hasFilters={query.length > 0 || tags.length > 0 || scope !== 'all'}
             onClearFilters={resetFilters}
@@ -123,15 +163,46 @@ export default function App() {
         onOpenChange={(open) => {
           if (!open) requestDeleteNote(null);
         }}
-        title="Delete this note?"
+        title="Move to trash?"
         description={
-          deleteTarget ? `${noteDeleteDescription(deleteTarget)} This cannot be undone.` : undefined
+          deleteTarget
+            ? `${noteDeleteDescription(deleteTarget)} You can restore it within 30 days.`
+            : undefined
         }
-        confirmLabel="Delete note"
+        confirmLabel="Move to trash"
         onConfirm={() => {
           if (deleteTarget) {
-            void removeNote(deleteTarget.id).then(() => {});
+            void trashNote(deleteTarget.id).then(() => {});
           }
+        }}
+      />
+      <ConfirmDialog
+        open={purgeTarget != null}
+        onOpenChange={(open) => {
+          if (!open) requestPurgeNote(null);
+        }}
+        title="Delete forever?"
+        description={
+          purgeTarget
+            ? `${noteDeleteDescription(purgeTarget)} This cannot be undone.`
+            : undefined
+        }
+        confirmLabel="Delete forever"
+        onConfirm={() => {
+          if (purgeTarget) {
+            if (detailNoteId === purgeTarget.id) useUiStore.getState().closeDetail();
+            void removeNote(purgeTarget.id).then(() => {});
+          }
+        }}
+      />
+      <ConfirmDialog
+        open={confirmEmptyTrashOpen}
+        onOpenChange={setConfirmEmptyTrashOpen}
+        title="Empty trash?"
+        description="This permanently deletes every note in trash. This cannot be undone."
+        confirmLabel="Empty trash"
+        onConfirm={() => {
+          void emptyTrash();
         }}
       />
       <ConfirmDialog

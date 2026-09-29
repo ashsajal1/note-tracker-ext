@@ -13,6 +13,8 @@ interface UiState {
   detailNoteId: string | null;
   settingsOpen: boolean;
   deleteTargetId: string | null;
+  /** note awaiting permanent deletion (from trash) */
+  purgeTargetId: string | null;
   confirmClearOpen: boolean;
   theme: ThemeSetting;
   openEditor: (noteId?: string | null) => void;
@@ -21,6 +23,7 @@ interface UiState {
   closeDetail: () => void;
   setSettingsOpen: (open: boolean) => void;
   requestDeleteNote: (id: string | null) => void;
+  requestPurgeNote: (id: string | null) => void;
   setConfirmClearOpen: (open: boolean) => void;
   setTheme: (theme: ThemeSetting) => void;
 }
@@ -30,6 +33,7 @@ export const useUiStore = create<UiState>()((set) => ({
   detailNoteId: null,
   settingsOpen: false,
   deleteTargetId: null,
+  purgeTargetId: null,
   confirmClearOpen: false,
   theme: 'system',
 
@@ -39,6 +43,7 @@ export const useUiStore = create<UiState>()((set) => ({
   closeDetail: () => set({ detailNoteId: null }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
   requestDeleteNote: (deleteTargetId) => set({ deleteTargetId }),
+  requestPurgeNote: (purgeTargetId) => set({ purgeTargetId }),
   setConfirmClearOpen: (confirmClearOpen) => set({ confirmClearOpen }),
 
   setTheme: (theme) => {

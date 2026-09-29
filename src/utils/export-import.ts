@@ -68,6 +68,13 @@ function sanitizeNote(raw: unknown, now: number): Note | null {
     tags,
     createdAt: isoOr(rec.createdAt, fallbackIso),
     updatedAt: isoOr(rec.updatedAt, fallbackIso),
+    deletedAt:
+      rec.deletedAt == null
+        ? null
+        : typeof rec.deletedAt === 'string' && !Number.isNaN(Date.parse(rec.deletedAt))
+          ? rec.deletedAt
+          : null,
+    pinned: rec.pinned === true,
   };
 }
 

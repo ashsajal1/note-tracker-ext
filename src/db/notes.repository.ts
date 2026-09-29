@@ -1,8 +1,17 @@
 import type { Note, NoteInput } from '@/types/note';
 import { db } from './database';
 
+/** Fill in fields missing from pre-v2 records. */
+function normalize(note: Note): Note {
+  return {
+    ...note,
+    deletedAt: note.deletedAt ?? null,
+    pinned: note.pinned ?? false,
+  };
+}
+
 export async function getAllNotes(): Promise<Note[]> {
-  return db.notes.toArray();
+  return (await db.notes.toArray()).map(normalize);
 }
 
 export async function createNote(input: NoteInput): Promise<Note> {
@@ -13,6 +22,8 @@ export async function createNote(input: NoteInput): Promise<Note> {
     tags: input.tags,
     createdAt: now,
     updatedAt: now,
+    deletedAt: null,
+    pinned: false,
   };
   await db.notes.add(note);
   return note;
@@ -35,6 +46,33 @@ export async function updateNote(id: string, input: NoteInput): Promise<Note | u
 
 export async function deleteNote(id: string): Promise<void> {
   await db.notes.delete(id);
+}
+
+/** Move a note to trash (recoverable for TRASH_RETENTION_MS). */
+export async function softDeleteNote(id: string): Promise<Note | undefined> {
+  return db.transaction('rw', db.notes, async () => {
+    const existing = await db.notes.get(id);
+    if (!existing) return undefined;
+    const next = normalize({ ...existing, deletedAt: new Date().toISOString() });
+    await db.notes.put(next);
+    return next;
+  });
+}
+
+/** Restore a trashed note. */
+export async function restoreNote(id: string): Promise<Note | undefined> {
+  return db.transaction('rw', db.notes, async () => {
+    const existing = await db.notes.get(id);
+    if (!existing) return undefined;
+    const next = normalize({ ...existing, deletedAt: null });
+    await db.notes.put(next);
+    return next;
+  });
+}
+
+/** Permanently delete trashed notes older than the cutoff ISO timestamp. */
+export async function purgeDeletedNotes(cutoffIso: string): Promise<number> {
+  return db.notes.where('deletedAt').below(cutoffIso).delete();
 }
 
 export async function clearAllNotes(): Promise<void> {

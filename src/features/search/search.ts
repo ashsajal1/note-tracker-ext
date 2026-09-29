@@ -51,11 +51,14 @@ export interface FilterOptions {
   tags: string[];
   scope: Scope;
   sort: SortOption;
+  /** include trashed notes (default false) */
+  includeDeleted?: boolean;
 }
 
 export function filterNotes(notes: Note[], options: FilterOptions, now = Date.now()): Note[] {
   const tokens = tokenizeQuery(options.query);
   return notes.filter((note) => {
+    if (!options.includeDeleted && note.deletedAt != null) return false;
     if (options.scope === 'recent' && !isRecent(note, now)) return false;
     if (!matchesTags(note, options.tags)) return false;
     return matchesQuery(note, tokens);
