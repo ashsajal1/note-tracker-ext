@@ -1,4 +1,5 @@
 import type { ThemeSetting } from '@/types/settings';
+import type { NoteTemplate } from '@/utils/templates';
 import { saveThemeSetting } from '@/db/settings.repository';
 import { create } from 'zustand';
 
@@ -6,6 +7,8 @@ interface EditorState {
   open: boolean;
   /** note being edited, null when creating a new one */
   noteId: string | null;
+  /** template seeding a new note (ignored when editing) */
+  template: NoteTemplate | null;
 }
 
 interface UiState {
@@ -17,7 +20,7 @@ interface UiState {
   purgeTargetId: string | null;
   confirmClearOpen: boolean;
   theme: ThemeSetting;
-  openEditor: (noteId?: string | null) => void;
+  openEditor: (noteId?: string | null, template?: NoteTemplate | null) => void;
   closeEditor: () => void;
   openDetail: (noteId: string) => void;
   closeDetail: () => void;
@@ -29,7 +32,7 @@ interface UiState {
 }
 
 export const useUiStore = create<UiState>()((set) => ({
-  editor: { open: false, noteId: null },
+  editor: { open: false, noteId: null, template: null },
   detailNoteId: null,
   settingsOpen: false,
   deleteTargetId: null,
@@ -37,8 +40,9 @@ export const useUiStore = create<UiState>()((set) => ({
   confirmClearOpen: false,
   theme: 'system',
 
-  openEditor: (noteId = null) => set({ editor: { open: true, noteId } }),
-  closeEditor: () => set({ editor: { open: false, noteId: null } }),
+  openEditor: (noteId = null, template = null) =>
+    set({ editor: { open: true, noteId, template } }),
+  closeEditor: () => set({ editor: { open: false, noteId: null, template: null } }),
   openDetail: (noteId) => set({ detailNoteId: noteId }),
   closeDetail: () => set({ detailNoteId: null }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),

@@ -7,6 +7,7 @@ import { TagInput } from '@/features/tags/tag-input';
 import { useNotesStore } from '@/stores/notes.store';
 import { useUiStore } from '@/stores/ui.store';
 import { countTags, stripHtml } from '@/utils/format';
+import { applyTemplateVariables } from '@/utils/templates';
 
 /**
  * Full-page create/edit view. Replaces the old editor modal — drafts live
@@ -14,6 +15,7 @@ import { countTags, stripHtml } from '@/utils/format';
  */
 export function NoteEditorPage() {
   const noteId = useUiStore((s) => s.editor.noteId);
+  const template = useUiStore((s) => s.editor.template);
   const closeEditor = useUiStore((s) => s.closeEditor);
 
   const notes = useNotesStore((s) => s.notes);
@@ -24,12 +26,16 @@ export function NoteEditorPage() {
   );
   const allTags = useMemo(() => countTags(notes).map((t) => t.tag), [notes]);
 
+  const creating = !editing;
+  const seedContent = creating && template ? applyTemplateVariables(template.html) : '';
+  const seedTags = creating && template ? template.tags : [];
+
   return (
     <EditorForm
-      key={noteId ?? 'new'}
+      key={`${noteId ?? 'new'}-${template?.id ?? 'blank'}`}
       noteId={noteId}
-      initialContent={editing?.content ?? ''}
-      initialTags={editing?.tags ?? []}
+      initialContent={editing?.content ?? seedContent}
+      initialTags={editing?.tags ?? seedTags}
       editing={Boolean(editing)}
       allTags={allTags}
       onCancel={closeEditor}

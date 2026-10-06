@@ -16,10 +16,11 @@ describe('useUiStore', () => {
   beforeEach(() => {
     // Reset store to initial state
     useUiStore.setState({
-      editor: { open: false, noteId: null },
+      editor: { open: false, noteId: null, template: null },
       detailNoteId: null,
       settingsOpen: false,
       deleteTargetId: null,
+      purgeTargetId: null,
       confirmClearOpen: false,
       theme: 'system',
     });
@@ -46,6 +47,14 @@ describe('useUiStore', () => {
       const state = useUiStore.getState();
       expect(state.editor.open).toBe(false);
       expect(state.editor.noteId).toBeNull();
+    });
+
+    it('seeds new notes with a template and clears it on close', () => {
+      const template = { id: 'meeting', label: 'Meeting', hint: '', tags: [], html: '' };
+      useUiStore.getState().openEditor(null, template);
+      expect(useUiStore.getState().editor.template).toEqual(template);
+      useUiStore.getState().closeEditor();
+      expect(useUiStore.getState().editor.template).toBeNull();
     });
   });
 
