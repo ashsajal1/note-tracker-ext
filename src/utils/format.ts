@@ -44,6 +44,12 @@ export function previewText(content: string, maxChars = 480): string {
   return plain.length > maxChars ? `${plain.slice(0, maxChars).trimEnd()}…` : plain;
 }
 
+/** Description snippet for a note about to be deleted. */
+export function noteDeleteDescription(note: Note): string {
+  const preview = note.content.trim().replace(/\s+/g, ' ').slice(0, 80);
+  return preview ? `“${preview}${note.content.length > 80 ? '…' : ''}”` : 'This note is empty.';
+}
+
 /** Aggregate tag -> usage count across notes, sorted by count desc then name. */
 export function countTags(notes: Note[]): { tag: string; count: number }[] {
   const counts = new Map<string, number>();

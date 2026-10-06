@@ -1,4 +1,3 @@
-import type { Note } from '@/types/note';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -53,10 +52,4 @@ export function ConfirmDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-/** Description snippet for a note about to be deleted. */
-export function noteDeleteDescription(note: Note): string {
-  const preview = note.content.trim().replace(/\s+/g, ' ').slice(0, 80);
-  return preview ? `“${preview}${note.content.length > 80 ? '…' : ''}”` : 'This note is empty.';
 }

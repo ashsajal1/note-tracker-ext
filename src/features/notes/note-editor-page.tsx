@@ -1,13 +1,28 @@
 import { ArrowLeft, Trash2 } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { TiptapEditor } from '@/components/ui/tiptap-editor';
 import { TagInput } from '@/features/tags/tag-input';
 import { useNotesStore } from '@/stores/notes.store';
 import { useUiStore } from '@/stores/ui.store';
 import { countTags, stripHtml } from '@/utils/format';
 import { applyTemplateVariables } from '@/utils/templates';
+
+// Code-split: Tiptap is ~80% of the popup bundle but only needed while
+// editing. Lazy-loading keeps the initial popup chunk under control.
+const TiptapEditor = lazy(() =>
+  import('@/components/ui/tiptap-editor').then((m) => ({ default: m.TiptapEditor })),
+);
+
+function EditorLoading() {
+  return (
+    <div
+      aria-busy="true"
+      aria-label="Loading editor"
+      className="h-[220px] animate-pulse rounded-md bg-muted"
+    />
+  );
+}
 
 /**
  * Full-page create/edit view. Replaces the old editor modal — drafts live
@@ -116,7 +131,13 @@ function EditorForm({
           void handleSave();
         }
         // Esc backs out, unless a menu/dialog owns the keystroke.
-        if (e.key === 'Escape' && !(e.target instanceof HTMLElement && e.target.closest('[role="menu"], [role="dialog"], [role="listbox"]'))) {
+        if (
+          e.key === 'Escape' &&
+          !(
+            e.target instanceof HTMLElement &&
+            e.target.closest('[role="menu"], [role="dialog"], [role="listbox"]')
+          )
+        ) {
           e.preventDefault();
           onCancel();
         }
@@ -158,13 +179,15 @@ function EditorForm({
       {/* Content */}
       <main className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-3">
         <section aria-label="Note content">
-          <TiptapEditor
-            content={content}
-            onChange={setContent}
-            placeholder="Write your note…"
-            autoFocus={!editing}
-            chrome="plain"
-          />
+          <Suspense fallback={<EditorLoading />}>
+            <TiptapEditor
+              content={content}
+              onChange={setContent}
+              placeholder="Write your note…"
+              autoFocus={!editing}
+              chrome="plain"
+            />
+          </Suspense>
         </section>
         <section aria-label="Note tags">
           <div className="mb-1.5 flex items-baseline justify-between">

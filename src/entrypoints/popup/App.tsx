@@ -1,14 +1,11 @@
 import { AlertCircle } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Toaster } from 'sonner';
-import { ConfirmDialog, noteDeleteDescription } from '@/components/confirm-dialog';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { NoteDetailView } from '@/features/notes/note-detail-view';
 import { NoteEditorPage } from '@/features/notes/note-editor-page';
 import { NotesGrid } from '@/features/notes/notes-grid';
 import { SearchBar } from '@/features/search/search-bar';
-import { SettingsDialog } from '@/features/settings/settings-dialog';
 import { TagFilterBar } from '@/features/tags/tag-filter-bar';
 import { TagList } from '@/features/tags/tag-list';
 import { useAppShortcuts } from '@/hooks/use-app-shortcuts';
@@ -19,7 +16,19 @@ import { filterAndSortNotes, matchesQuery, parseSearchQuery } from '@/features/s
 import { useFiltersStore } from '@/stores/filters.store';
 import { useNotesStore } from '@/stores/notes.store';
 import { useUiStore } from '@/stores/ui.store';
+import { noteDeleteDescription } from '@/utils/format';
 import { activeNotes, trashedNotes } from '@/utils/notes';
+
+// Dialogs load on demand so Radix dialog code stays out of the initial chunk.
+const ConfirmDialog = lazy(() =>
+  import('@/components/confirm-dialog').then((m) => ({ default: m.ConfirmDialog })),
+);
+const SettingsDialog = lazy(() =>
+  import('@/features/settings/settings-dialog').then((m) => ({ default: m.SettingsDialog })),
+);
+// Toast UI is only needed once the first toast fires; the chunk starts
+// loading with the popup so it is ready before any user action.
+const Toaster = lazy(() => import('sonner').then((m) => ({ default: m.Toaster })));
 
 const SEARCH_DEBOUNCE_MS = 120;
 
@@ -75,8 +84,7 @@ export default function App() {
   const visibleTrash = useMemo(() => {
     const parsed = parseSearchQuery(debouncedQuery);
     return trashedNotes(notes).filter(
-      (n) =>
-        tags.every((t) => n.tags.includes(t)) && matchesQuery(n, parsed),
+      (n) => tags.every((t) => n.tags.includes(t)) && matchesQuery(n, parsed),
     );
   }, [notes, debouncedQuery, tags]);
 
@@ -192,79 +200,81 @@ export default function App() {
         )}
       </main>
 
-      {/* Dialogs */}
-      <SettingsDialog />
-      <ConfirmDialog
-        open={deleteTarget != null}
-        onOpenChange={(open) => {
-          if (!open) requestDeleteNote(null);
-        }}
-        title="Move to trash?"
-        description={
-          deleteTarget
-            ? `${noteDeleteDescription(deleteTarget)} You can restore it within 30 days.`
-            : undefined
-        }
-        confirmLabel="Move to trash"
-        onConfirm={() => {
-          if (deleteTarget) {
-            void trashNote(deleteTarget.id).then(() => {});
+      {/* Dialogs (lazy — loaded on first open) */}
+      <Suspense fallback={null}>
+        <SettingsDialog />
+        <ConfirmDialog
+          open={deleteTarget != null}
+          onOpenChange={(open) => {
+            if (!open) requestDeleteNote(null);
+          }}
+          title="Move to trash?"
+          description={
+            deleteTarget
+              ? `${noteDeleteDescription(deleteTarget)} You can restore it within 30 days.`
+              : undefined
           }
-        }}
-      />
-      <ConfirmDialog
-        open={purgeTarget != null}
-        onOpenChange={(open) => {
-          if (!open) requestPurgeNote(null);
-        }}
-        title="Delete forever?"
-        description={
-          purgeTarget
-            ? `${noteDeleteDescription(purgeTarget)} This cannot be undone.`
-            : undefined
-        }
-        confirmLabel="Delete forever"
-        onConfirm={() => {
-          if (purgeTarget) {
-            if (detailNoteId === purgeTarget.id) useUiStore.getState().closeDetail();
-            void removeNote(purgeTarget.id).then(() => {});
+          confirmLabel="Move to trash"
+          onConfirm={() => {
+            if (deleteTarget) {
+              void trashNote(deleteTarget.id).then(() => {});
+            }
+          }}
+        />
+        <ConfirmDialog
+          open={purgeTarget != null}
+          onOpenChange={(open) => {
+            if (!open) requestPurgeNote(null);
+          }}
+          title="Delete forever?"
+          description={
+            purgeTarget ? `${noteDeleteDescription(purgeTarget)} This cannot be undone.` : undefined
           }
-        }}
-      />
-      <ConfirmDialog
-        open={confirmEmptyTrashOpen}
-        onOpenChange={setConfirmEmptyTrashOpen}
-        title="Empty trash?"
-        description="This permanently deletes every note in trash. This cannot be undone."
-        confirmLabel="Empty trash"
-        onConfirm={() => {
-          void emptyTrash();
-        }}
-      />
-      <ConfirmDialog
-        open={confirmClearOpen}
-        onOpenChange={setConfirmClearOpen}
-        title="Clear all data?"
-        description={`This permanently deletes all ${notes.length} notes from this device. Export a backup first if you might need them.`}
-        confirmLabel="Delete everything"
-        onConfirm={() => {
-          void removeAllNotes();
-        }}
-      />
+          confirmLabel="Delete forever"
+          onConfirm={() => {
+            if (purgeTarget) {
+              if (detailNoteId === purgeTarget.id) useUiStore.getState().closeDetail();
+              void removeNote(purgeTarget.id).then(() => {});
+            }
+          }}
+        />
+        <ConfirmDialog
+          open={confirmEmptyTrashOpen}
+          onOpenChange={setConfirmEmptyTrashOpen}
+          title="Empty trash?"
+          description="This permanently deletes every note in trash. This cannot be undone."
+          confirmLabel="Empty trash"
+          onConfirm={() => {
+            void emptyTrash();
+          }}
+        />
+        <ConfirmDialog
+          open={confirmClearOpen}
+          onOpenChange={setConfirmClearOpen}
+          title="Clear all data?"
+          description={`This permanently deletes all ${notes.length} notes from this device. Export a backup first if you might need them.`}
+          confirmLabel="Delete everything"
+          onConfirm={() => {
+            void removeAllNotes();
+          }}
+        />
+      </Suspense>
 
-      <Toaster
-        theme={resolvedTheme}
-        position="bottom-right"
-        duration={2500}
-        closeButton={false}
-        toastOptions={{
-          classNames: {
-            toast:
-              '!bg-popover !text-popover-foreground !border !border-border !shadow-lg !rounded-lg !text-sm',
-            description: '!text-muted-foreground',
-          },
-        }}
-      />
+      <Suspense fallback={null}>
+        <Toaster
+          theme={resolvedTheme}
+          position="bottom-right"
+          duration={2500}
+          closeButton={false}
+          toastOptions={{
+            classNames: {
+              toast:
+                '!bg-popover !text-popover-foreground !border !border-border !shadow-lg !rounded-lg !text-sm',
+              description: '!text-muted-foreground',
+            },
+          }}
+        />
+      </Suspense>
     </div>
   );
 }
