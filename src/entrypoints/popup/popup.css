@@ -170,6 +170,15 @@ body {
   border-radius: 0.0625rem;
 }
 
+.note-card-content img {
+  max-width: 100%;
+  height: auto;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  margin: 0.25rem 0;
+}
+
 /* Pasted rich text often carries inline `color: #000` / `color: black`
    which is unreadable on the dark card background. Notes saved before
    the paste sanitizer still contain those styles, so force theme

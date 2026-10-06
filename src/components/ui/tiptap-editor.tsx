@@ -5,6 +5,7 @@ import {
   Heading2,
   Heading3,
   Highlighter,
+  ImagePlus,
   Italic,
   List,
   ListOrdered,
@@ -14,14 +15,18 @@ import {
   Underline,
   Undo,
 } from 'lucide-react';
+import { useRef } from 'react';
 import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Highlight from '@tiptap/extension-highlight';
+import Image from '@tiptap/extension-image';
 import { TextStyle, Color } from '@tiptap/extension-text-style';
 import UnderlineExt from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
+import { toast } from 'sonner';
 import { cn } from '@/utils/cn';
 import { sanitizePastedHtml } from '@/utils/clipboard';
+import { fileToDataUrl, validateImageFile } from '@/utils/images';
 import '@/components/ui/tiptap.css';
 
 interface TiptapEditorProps {
@@ -65,7 +70,15 @@ function ToolbarButton({
   );
 }
 
-function Toolbar({ editor, plain = false }: { editor: Editor; plain?: boolean }) {
+function Toolbar({
+  editor,
+  plain = false,
+  onInsertImage,
+}: {
+  editor: Editor;
+  plain?: boolean;
+  onInsertImage: () => void;
+}) {
   return (
     <div
       className={cn(
@@ -186,6 +199,9 @@ function Toolbar({ editor, plain = false }: { editor: Editor; plain?: boolean })
       >
         <Code className="size-3.5" />
       </ToolbarButton>
+      <ToolbarButton onClick={onInsertImage} title="Insert image">
+        <ImagePlus className="size-3.5" />
+      </ToolbarButton>
     </div>
   );
 }
@@ -197,6 +213,34 @@ export function TiptapEditor({
   autoFocus = false,
   chrome = 'boxed',
 }: TiptapEditorProps) {
+  const editorRef = useRef<Editor | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /** Embed image files as data URLs. Returns true when files were handled. */
+  function insertFiles(files: FileList | File[] | undefined | null): boolean {
+    const editor = editorRef.current;
+    if (!editor || !files || files.length === 0) return false;
+    const images = [...files].filter((f) => f.type.startsWith('image/'));
+    if (images.length === 0) return false;
+    void (async () => {
+      for (const file of images) {
+        const problem = validateImageFile(file);
+        if (problem === 'too-large') {
+          toast.error('Image too large (max 3 MB)');
+          continue;
+        }
+        if (problem) continue;
+        try {
+          const src = await fileToDataUrl(file);
+          editor.chain().focus().setImage({ src }).run();
+        } catch {
+          toast.error('Could not insert image');
+        }
+      }
+    })();
+    return true;
+  }
+
   const editor = useEditor({
     immediatelyRender: false,
     autofocus: autoFocus,
@@ -206,11 +250,19 @@ export function TiptapEditor({
       TextStyle,
       Color,
       UnderlineExt,
+      Image.configure({ allowBase64: true }),
       Placeholder.configure({ placeholder }),
     ],
     content,
+    onCreate: ({ editor: e }) => {
+      editorRef.current = e;
+    },
     onUpdate: ({ editor: e }) => {
+      editorRef.current = e;
       onChange?.(e.getHTML());
+    },
+    onDestroy: () => {
+      editorRef.current = null;
     },
     editorProps: {
       attributes: {
@@ -223,6 +275,8 @@ export function TiptapEditor({
       // styles that turn invisible in dark mode. Strip text color on paste
       // so pasted content inherits the theme foreground.
       transformPastedHTML: (html) => sanitizePastedHtml(html),
+      handlePaste: (_view, event) => insertFiles(event.clipboardData?.files),
+      handleDrop: (_view, event) => insertFiles(event.dataTransfer?.files),
     },
   });
 
@@ -236,10 +290,26 @@ export function TiptapEditor({
           : 'overflow-hidden rounded-md border border-input bg-card shadow-sm focus-within:ring-2 focus-within:ring-ring'
       }
     >
-      {editor && <Toolbar editor={editor} plain={plain} />}
+      {editor && (
+        <Toolbar editor={editor} plain={plain} onInsertImage={() => fileInputRef.current?.click()} />
+      )}
       <div className={plain ? undefined : 'max-h-[300px] overflow-y-auto'}>
         <EditorContent editor={editor} />
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        aria-hidden
+        tabIndex={-1}
+        onChange={(e) => {
+          insertFiles(e.target.files);
+          // Reset so the same file can be picked again.
+          e.target.value = '';
+        }}
+      />
     </div>
   );
 }
