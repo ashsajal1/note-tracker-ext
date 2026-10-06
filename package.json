@@ -1,6 +1,6 @@
 {
   "name": "note-tracker",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Fast, private, local-first note tracker browser extension",
   "main": "index.js",
   "scripts": {

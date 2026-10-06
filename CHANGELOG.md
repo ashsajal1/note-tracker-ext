@@ -2,6 +2,22 @@
 
 All notable changes to Note Tracker.
 
+## [1.2.0] - 2026-10-06 - Power Notes Release
+
+Eight new features, all local-first. Storage migrates to schema v2 (`deletedAt` index); pre-v2 records and legacy backups normalize on read/import.
+
+### Added
+- **Trash** - Delete moves notes to trash with restore, trash view with search, empty trash, delete-forever confirmation, and 30-day auto-purge on startup.
+- **Pin Notes** - Pin toggle on cards and detail view; pinned notes sort first in every sort order.
+- **Duplicate Note** - Clone any note (fresh id/timestamps) from the note actions menu.
+- **Image Support** - Paste, drag-drop, or toolbar-insert images, embedded as data URLs (3 MB guard per image).
+- **Search Operators** - `"exact phrase"` matching plus `-term` / `-"phrase"` exclusions, with a tooltip on the search box.
+- **Markdown Export** - Export all active notes as a single readable `.md` document (date sections, tags, pinned markers).
+- **Keyboard Card Navigation** - `j`/`k` move focus (wraps), `Enter` opens, `e` edits, `x` trashes, `Esc` unfocuses; documented in Settings.
+- **Note Templates** - New-note split button with Blank, Meeting, Daily log, and Reading templates; `{{date}}` fills in automatically.
+- **Full-Page Editor** - Create/edit opens a dedicated page (no modal) with autofocus, word count, and a borderless writing surface.
+- **Scrollable Tag Rows** - Single-row tag strips with wheel + cursor-drag scrolling and edge fade hints, on cards and the filter bar.
+
 ## [1.1.0] - 2026-09-03 - Second Chrome Release
 
 Fast, private, local-first note tracker. All data stays in your browser (IndexedDB + `storage.local`), zero network requests.
