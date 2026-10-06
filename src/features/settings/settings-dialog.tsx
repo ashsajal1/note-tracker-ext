@@ -1,6 +1,5 @@
 import { Download, Moon, Sun, SunMoon, Trash2, Upload } from 'lucide-react';
 import { useMemo, useRef } from 'react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,6 +14,7 @@ import { useUiStore } from '@/stores/ui.store';
 import { countTags } from '@/utils/format';
 import type { ThemeSetting } from '@/types/settings';
 import { cn } from '@/utils/cn';
+import { notify } from '@/utils/toast';
 
 const THEME_OPTIONS: { value: ThemeSetting; label: string; icon: typeof Sun }[] = [
   { value: 'system', label: 'System', icon: SunMoon },
@@ -46,9 +46,9 @@ export function SettingsDialog() {
       anchor.download = `note-tracker-backup-${stamp}.json`;
       anchor.click();
       URL.revokeObjectURL(url);
-      toast.success(`Exported ${notes.length} ${notes.length === 1 ? 'note' : 'notes'}`);
+      notify('success', `Exported ${notes.length} ${notes.length === 1 ? 'note' : 'notes'}`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Export failed');
+      notify('error', err instanceof Error ? err.message : 'Export failed');
     }
   };
 
@@ -63,9 +63,9 @@ export function SettingsDialog() {
       anchor.download = `note-tracker-notes-${stamp}.md`;
       anchor.click();
       URL.revokeObjectURL(url);
-      toast.success('Exported notes as Markdown');
+      notify('success', 'Exported notes as Markdown');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Export failed');
+      notify('error', err instanceof Error ? err.message : 'Export failed');
     }
   };
 
@@ -77,12 +77,13 @@ export function SettingsDialog() {
         throw new Error('No valid notes found in this file');
       }
       await importNotes(imported);
-      toast.success(
+      notify(
+        'success',
         `Imported ${imported.length} ${imported.length === 1 ? 'note' : 'notes'}` +
           (skipped > 0 ? ` · ${skipped} skipped` : ''),
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Import failed — invalid file');
+      notify('error', err instanceof Error ? err.message : 'Import failed — invalid file');
     }
   };
 

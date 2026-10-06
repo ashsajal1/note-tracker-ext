@@ -1,12 +1,12 @@
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { Suspense, lazy, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { TagInput } from '@/features/tags/tag-input';
 import { useNotesStore } from '@/stores/notes.store';
 import { useUiStore } from '@/stores/ui.store';
 import { countTags, stripHtml } from '@/utils/format';
 import { applyTemplateVariables } from '@/utils/templates';
+import { notify } from '@/utils/toast';
 
 // Code-split: Tiptap is ~80% of the popup bundle but only needed while
 // editing. Lazy-loading keeps the initial popup chunk under control.
@@ -109,14 +109,14 @@ function EditorForm({
     try {
       if (editing && noteId) {
         await editNote(noteId, { content: content.trim(), tags });
-        toast.success('Note updated');
+        notify('success', 'Note updated');
       } else {
         await addNote({ content: content.trim(), tags });
-        toast.success('Note saved');
+        notify('success', 'Note saved');
       }
       onCancel();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save the note');
+      notify('error', err instanceof Error ? err.message : 'Failed to save the note');
       savingRef.current = false;
       setSaving(false);
     }

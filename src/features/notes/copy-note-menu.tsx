@@ -1,6 +1,5 @@
 import { Check, Copy, CopyPlus, FileCode2, FileText } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useNotesStore } from '@/stores/notes.store';
 import { htmlToMarkdown, htmlToPlainText } from '@/utils/clipboard';
+import { notify } from '@/utils/toast';
 
 interface CopyNoteMenuProps {
   /** Note id (for duplicate). */
@@ -42,16 +42,16 @@ export function CopyNoteMenu({ noteId, contentHtml }: CopyNoteMenuProps) {
       const text = kind === 'plain' ? htmlToPlainText(contentHtml) : htmlToMarkdown(contentHtml);
       await navigator.clipboard.writeText(text);
       flashCopied();
-      toast.success(kind === 'plain' ? 'Copied as plain text' : 'Copied as Markdown');
+      notify('success', kind === 'plain' ? 'Copied as plain text' : 'Copied as Markdown');
     } catch {
-      toast.error('Could not access the clipboard');
+      notify('error', 'Could not access the clipboard');
     }
   };
 
   const duplicate = async () => {
     const clone = await duplicateNote(noteId);
-    if (clone) toast.success('Note duplicated');
-    else toast.error('Could not duplicate the note');
+    if (clone) notify('success', 'Note duplicated');
+    else notify('error', 'Could not duplicate the note');
   };
 
   return (

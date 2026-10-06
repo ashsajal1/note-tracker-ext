@@ -23,10 +23,10 @@ import Image from '@tiptap/extension-image';
 import { TextStyle, Color } from '@tiptap/extension-text-style';
 import UnderlineExt from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
-import { toast } from 'sonner';
 import { cn } from '@/utils/cn';
 import { sanitizePastedHtml } from '@/utils/clipboard';
 import { fileToDataUrl, validateImageFile } from '@/utils/images';
+import { notify } from '@/utils/toast';
 import '@/components/ui/tiptap.css';
 
 interface TiptapEditorProps {
@@ -226,7 +226,7 @@ export function TiptapEditor({
       for (const file of images) {
         const problem = validateImageFile(file);
         if (problem === 'too-large') {
-          toast.error('Image too large (max 3 MB)');
+          notify('error', 'Image too large (max 3 MB)');
           continue;
         }
         if (problem) continue;
@@ -234,7 +234,7 @@ export function TiptapEditor({
           const src = await fileToDataUrl(file);
           editor.chain().focus().setImage({ src }).run();
         } catch {
-          toast.error('Could not insert image');
+          notify('error', 'Could not insert image');
         }
       }
     })();
