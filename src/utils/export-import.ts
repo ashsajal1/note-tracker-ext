@@ -1,4 +1,5 @@
 import type { Note } from '@/types/note';
+import { htmlToMarkdown } from '@/utils/clipboard';
 import { dedupeTags } from '@/utils/tags';
 
 export const EXPORT_FORMAT_VERSION = 1;
@@ -17,6 +18,31 @@ export function buildExportPayload(notes: Note[]): ExportPayload {
     exportedAt: new Date().toISOString(),
     notes,
   };
+}
+
+/**
+ * Render active notes as a single readable Markdown document:
+ * `# Note Tracker Export` + one `## <date>` section per note with
+ * its tags and converted body. Trashed notes are skipped (the JSON
+ * backup covers full restores).
+ */
+export function buildMarkdownExport(notes: Note[]): string {
+  const active = notes
+    .filter((n) => n.deletedAt == null)
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  const sections = active.map((note) => {
+    const date = new Date(note.createdAt).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+    const header = [`## ${date}${note.pinned ? ' (pinned)' : ''}`];
+    if (note.tags.length > 0) header.push(note.tags.map((t) => `#${t}`).join(' '));
+    const body = htmlToMarkdown(note.content).trim();
+    if (body) header.push(body);
+    return header.join('\n\n');
+  });
+  return [`# Note Tracker Export`, ...sections].join('\n\n---\n\n') + '\n';
 }
 
 export interface ImportResult {

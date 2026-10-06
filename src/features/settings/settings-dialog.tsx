@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { buildExportPayload, parseImportPayload } from '@/utils/export-import';
+import { buildExportPayload, buildMarkdownExport, parseImportPayload } from '@/utils/export-import';
 import { useNotesStore } from '@/stores/notes.store';
 import { useUiStore } from '@/stores/ui.store';
 import { countTags } from '@/utils/format';
@@ -47,6 +47,23 @@ export function SettingsDialog() {
       anchor.click();
       URL.revokeObjectURL(url);
       toast.success(`Exported ${notes.length} ${notes.length === 1 ? 'note' : 'notes'}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Export failed');
+    }
+  };
+
+  const exportMarkdown = () => {
+    try {
+      const doc = buildMarkdownExport(notes);
+      const blob = new Blob([doc], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 10);
+      anchor.href = url;
+      anchor.download = `note-tracker-notes-${stamp}.md`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      toast.success('Exported notes as Markdown');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Export failed');
     }
@@ -114,12 +131,16 @@ export function SettingsDialog() {
           </h3>
           <p className="text-xs text-muted-foreground">
             Back up your notes as a portable JSON file, or restore a previous backup. Notes with the
-            same ID are updated.
+            same ID are updated. Markdown export gives you a readable document of all active notes.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={exportNotes}>
               <Download aria-hidden />
               Export notes
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportMarkdown}>
+              <Download aria-hidden />
+              Export Markdown
             </Button>
             <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
               <Upload aria-hidden />

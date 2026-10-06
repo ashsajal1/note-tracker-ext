@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildExportPayload, parseImportPayload } from '@/utils/export-import';
+import {
+  buildExportPayload,
+  buildMarkdownExport,
+  parseImportPayload,
+} from '@/utils/export-import';
 import type { Note } from '@/types/note';
 
 const NOW = Date.parse('2026-08-20T00:00:00Z');
@@ -102,5 +106,41 @@ describe('parseImportPayload', () => {
   it('drops invalid deletedAt values', () => {
     const result = parseImportPayload([{ ...base, deletedAt: 'yesterday' }], NOW);
     expect(result.notes[0]?.deletedAt).toBeNull();
+  });
+});
+
+describe('buildMarkdownExport', () => {
+  const md = (partial: Partial<Note> & { id: string }): Note => ({
+    content: '',
+    tags: [],
+    createdAt: '2026-08-20T10:00:00Z',
+    updatedAt: '2026-08-20T10:00:00Z',
+    deletedAt: null,
+    pinned: false,
+    ...partial,
+  });
+
+  it('renders a titled document with date sections, tags, and body', () => {
+    const doc = buildMarkdownExport([
+      md({ id: '1', content: '<p>Hello <strong>world</strong></p>', tags: ['a', 'b'] }),
+    ]);
+    expect(doc).toContain('# Note Tracker Export');
+    expect(doc).toContain('## Aug 20, 2026');
+    expect(doc).toContain('#a #b');
+    expect(doc).toContain('Hello **world**');
+  });
+
+  it('skips trashed notes and marks pinned ones', () => {
+    const doc = buildMarkdownExport([
+      md({ id: '1', content: '<p>gone</p>', deletedAt: '2026-08-19T00:00:00Z' }),
+      md({ id: '2', content: '<p>kept</p>', pinned: true }),
+    ]);
+    expect(doc).not.toContain('gone');
+    expect(doc).toContain('kept');
+    expect(doc).toContain('(pinned)');
+  });
+
+  it('ends with a newline and handles empty notes', () => {
+    expect(buildMarkdownExport([])).toBe('# Note Tracker Export\n');
   });
 });
