@@ -3,6 +3,7 @@ import {
   filterAndSortNotes,
   filterNotes,
   matchesQuery,
+  parseSearchQuery,
   sortNotes,
   tokenizeQuery,
 } from '@/features/search/search';
@@ -76,6 +77,72 @@ describe('matchesQuery', () => {
 
   it('always matches when there are no tokens', () => {
     expect(matchesQuery(n, [])).toBe(true);
+  });
+});
+
+describe('parseSearchQuery', () => {
+  it('parses bare words as includes', () => {
+    expect(parseSearchQuery('  Local FIRST  software ')).toEqual({
+      include: ['local', 'first', 'software'],
+      exclude: [],
+    });
+  });
+
+  it('returns empty lists for blank queries', () => {
+    expect(parseSearchQuery('')).toEqual({ include: [], exclude: [] });
+    expect(parseSearchQuery('   ')).toEqual({ include: [], exclude: [] });
+  });
+
+  it('keeps quoted phrases together', () => {
+    expect(parseSearchQuery('"platform team" standup')).toEqual({
+      include: ['platform team', 'standup'],
+      exclude: [],
+    });
+  });
+
+  it('parses -term and -"phrase" as excludes', () => {
+    expect(parseSearchQuery('standup -timeline -"project plan"')).toEqual({
+      include: ['standup'],
+      exclude: ['timeline', 'project plan'],
+    });
+  });
+
+  it('ignores a lone dash and stray quotes', () => {
+    expect(parseSearchQuery('- "unclosed')).toEqual({
+      include: ['unclosed'],
+      exclude: [],
+    });
+  });
+});
+
+describe('matchesQuery operators', () => {
+  const n = NOTES[1]!; // "Standup notes for the platform team"
+
+  it('matches exact phrases adjacently', () => {
+    expect(matchesQuery(n, parseSearchQuery('"platform team"'))).toBe(true);
+    expect(matchesQuery(n, parseSearchQuery('"team platform"'))).toBe(false);
+  });
+
+  it('excludes -terms', () => {
+    expect(matchesQuery(n, parseSearchQuery('standup -timeline'))).toBe(true);
+    expect(matchesQuery(n, parseSearchQuery('standup -platform'))).toBe(false);
+  });
+
+  it('excludes -"phrases"', () => {
+    expect(matchesQuery(n, parseSearchQuery('standup -"other team"'))).toBe(true);
+    expect(matchesQuery(n, parseSearchQuery('standup -"platform team"'))).toBe(false);
+  });
+
+  it('applies operators through filterNotes', () => {
+    const opts = {
+      query: '"grocery list" -eggs',
+      tags: [],
+      scope: 'all' as const,
+      sort: 'created-desc' as const,
+    };
+    expect(filterNotes(NOTES, opts, NOW).map((x) => x.id)).toEqual([]);
+    const match = { ...opts, query: '"grocery list"' };
+    expect(filterNotes(NOTES, match, NOW).map((x) => x.id)).toEqual(['1']);
   });
 });
 

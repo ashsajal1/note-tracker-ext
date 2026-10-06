@@ -25,6 +25,7 @@ export function SearchBar({ inputRef }: SearchBarProps) {
         role="searchbox"
         aria-label="Search notes"
         placeholder="Search notes…"
+        title='Supports "exact phrase" and -exclude'
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => {

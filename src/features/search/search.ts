@@ -24,14 +24,47 @@ function haystack(note: Note): string {
 
 /** Split "work urgent" into ["work", "urgent"]. Empty tokens removed. */
 export function tokenizeQuery(query: string): string[] {
-  return query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  return parseSearchQuery(query).include;
 }
 
-/** Every token must appear somewhere in content or tags (partial match). */
-export function matchesQuery(note: Note, tokens: string[]): boolean {
-  if (tokens.length === 0) return true;
+export interface ParsedQuery {
+  /** tokens that must all appear (bare words + "quoted phrases") */
+  include: string[];
+  /** tokens that must not appear (`-term`, `-"quoted phrase"`) */
+  exclude: string[];
+}
+
+/**
+ * Parse search text with operator support:
+ * - `"exact phrase"` matches the words adjacently, in order
+ * - `-term` / `-"exact phrase"` excludes matches
+ * - everything else matches as before (case-insensitive substring)
+ */
+export function parseSearchQuery(query: string): ParsedQuery {
+  const include: string[] = [];
+  const exclude: string[] = [];
+  // Matches optional `-` then a quoted phrase or a bare token.
+  const pattern = /(-?)"([^"]+)"|(-?)(\S+)/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(query)) !== null) {
+    const negated = match[1] === '-' || match[3] === '-';
+    // Stray quotes in bare tokens (e.g. an unclosed `"`) are ignored.
+    const token = (match[2] ?? match[4] ?? '').replace(/"/g, '').toLowerCase();
+    if (!token || token === '-') continue;
+    (negated ? exclude : include).push(token);
+  }
+  return { include, exclude };
+}
+
+/** Every include token must appear; no exclude token may appear. */
+export function matchesQuery(note: Note, tokens: string[] | ParsedQuery): boolean {
+  const parsed: ParsedQuery = Array.isArray(tokens) ? { include: tokens, exclude: [] } : tokens;
+  if (parsed.include.length === 0 && parsed.exclude.length === 0) return true;
   const hay = haystack(note);
-  return tokens.every((token) => hay.includes(token));
+  return (
+    parsed.include.every((token) => hay.includes(token)) &&
+    parsed.exclude.every((token) => !hay.includes(token))
+  );
 }
 
 function isRecent(note: Note, now: number): boolean {
@@ -56,12 +89,12 @@ export interface FilterOptions {
 }
 
 export function filterNotes(notes: Note[], options: FilterOptions, now = Date.now()): Note[] {
-  const tokens = tokenizeQuery(options.query);
+  const parsed = parseSearchQuery(options.query);
   return notes.filter((note) => {
     if (!options.includeDeleted && note.deletedAt != null) return false;
     if (options.scope === 'recent' && !isRecent(note, now)) return false;
     if (!matchesTags(note, options.tags)) return false;
-    return matchesQuery(note, tokens);
+    return matchesQuery(note, parsed);
   });
 }
 

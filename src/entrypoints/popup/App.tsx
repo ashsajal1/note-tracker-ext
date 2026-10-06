@@ -14,7 +14,7 @@ import { TagList } from '@/features/tags/tag-list';
 import { useAppShortcuts } from '@/hooks/use-app-shortcuts';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useTheme } from '@/hooks/use-theme';
-import { filterAndSortNotes, matchesQuery, tokenizeQuery } from '@/features/search/search';
+import { filterAndSortNotes, matchesQuery, parseSearchQuery } from '@/features/search/search';
 import { useFiltersStore } from '@/stores/filters.store';
 import { useNotesStore } from '@/stores/notes.store';
 import { useUiStore } from '@/stores/ui.store';
@@ -71,10 +71,10 @@ export default function App() {
 
   // Trash view: trashed notes matching the same query/tag filters.
   const visibleTrash = useMemo(() => {
-    const tokens = tokenizeQuery(debouncedQuery);
+    const parsed = parseSearchQuery(debouncedQuery);
     return trashedNotes(notes).filter(
       (n) =>
-        tags.every((t) => n.tags.includes(t)) && matchesQuery(n, tokens),
+        tags.every((t) => n.tags.includes(t)) && matchesQuery(n, parsed),
     );
   }, [notes, debouncedQuery, tags]);
 
