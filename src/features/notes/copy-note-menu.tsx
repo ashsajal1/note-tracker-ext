@@ -1,4 +1,4 @@
-import { Check, Copy, FileCode2, FileText } from 'lucide-react';
+import { Check, Copy, CopyPlus, FileCode2, FileText } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -7,22 +7,27 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useNotesStore } from '@/stores/notes.store';
 import { htmlToMarkdown, htmlToPlainText } from '@/utils/clipboard';
 
 interface CopyNoteMenuProps {
+  /** Note id (for duplicate). */
+  noteId: string;
   /** Stored Tiptap HTML content. */
   contentHtml: string;
 }
 
 /**
- * Copy dropdown: plain text vs Markdown. Reused by the card footer
- * and the detail view header so both offer the same two options.
+ * Note actions menu: copy as plain text / Markdown, plus duplicate.
+ * Reused by the card footer and the detail view header.
  */
-export function CopyNoteMenu({ contentHtml }: CopyNoteMenuProps) {
+export function CopyNoteMenu({ noteId, contentHtml }: CopyNoteMenuProps) {
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<number | undefined>(undefined);
+  const duplicateNote = useNotesStore((s) => s.duplicateNote);
 
   useEffect(() => () => window.clearTimeout(copyTimer.current), []);
 
@@ -43,14 +48,20 @@ export function CopyNoteMenu({ contentHtml }: CopyNoteMenuProps) {
     }
   };
 
+  const duplicate = async () => {
+    const clone = await duplicateNote(noteId);
+    if (clone) toast.success('Note duplicated');
+    else toast.error('Could not duplicate the note');
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="Copy note content"
-          title="Copy as plain text or Markdown"
+          aria-label="Note actions"
+          title="Copy or duplicate"
         >
           {copied ? (
             <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -68,6 +79,11 @@ export function CopyNoteMenu({ contentHtml }: CopyNoteMenuProps) {
         <DropdownMenuItem onSelect={() => void copyAs('markdown')}>
           <FileCode2 aria-hidden />
           Markdown
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => void duplicate()}>
+          <CopyPlus aria-hidden />
+          Duplicate note
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

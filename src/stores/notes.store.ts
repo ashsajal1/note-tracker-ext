@@ -22,7 +22,8 @@ interface NotesState {
   emptyTrash: () => Promise<void>;
   /** Flip the pinned flag. */
   togglePin: (id: string) => Promise<void>;
-  removeAllNotes: () => Promise<void>;
+  /** Clone a note; returns the copy. */
+  duplicateNote: (id: string) => Promise<Note | undefined>;  removeAllNotes: () => Promise<void>;
   importNotes: (notes: Note[]) => Promise<void>;
 }
 
@@ -92,6 +93,13 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
     const updated = await repo.togglePinNote(id);
     if (!updated) return;
     set((s) => ({ notes: s.notes.map((n) => (n.id === id ? updated : n)) }));
+  },
+
+  duplicateNote: async (id) => {
+    const clone = await repo.duplicateNote(id);
+    if (!clone) return undefined;
+    set((s) => ({ notes: [clone, ...s.notes] }));
+    return clone;
   },
 
   removeAllNotes: async () => {

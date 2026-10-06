@@ -86,6 +86,24 @@ export async function togglePinNote(id: string): Promise<Note | undefined> {
   });
 }
 
+/** Clone content/tags into a fresh active, unpinned note. */
+export async function duplicateNote(id: string): Promise<Note | undefined> {
+  const existing = await db.notes.get(id);
+  if (!existing) return undefined;
+  const now = new Date().toISOString();
+  const clone: Note = {
+    id: crypto.randomUUID(),
+    content: existing.content,
+    tags: [...existing.tags],
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    pinned: false,
+  };
+  await db.notes.add(clone);
+  return clone;
+}
+
 export async function clearAllNotes(): Promise<void> {
   await db.notes.clear();
 }

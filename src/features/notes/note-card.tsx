@@ -156,7 +156,7 @@ export function NoteCard({
               >
                 <Pin className={cn('size-3.5', note.pinned && 'fill-current')} />
               </Button>
-              <CopyNoteMenu contentHtml={note.content} />
+              <CopyNoteMenu noteId={note.id} contentHtml={note.content} />
               <Button
                 variant="ghost"
                 size="icon-sm"
