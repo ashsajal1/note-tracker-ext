@@ -12,6 +12,7 @@ import { SettingsDialog } from '@/features/settings/settings-dialog';
 import { TagFilterBar } from '@/features/tags/tag-filter-bar';
 import { TagList } from '@/features/tags/tag-list';
 import { useAppShortcuts } from '@/hooks/use-app-shortcuts';
+import { useCardNavigation } from '@/hooks/use-card-navigation';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useTheme } from '@/hooks/use-theme';
 import { filterAndSortNotes, matchesQuery, parseSearchQuery } from '@/features/search/search';
@@ -57,6 +58,7 @@ export default function App() {
   const openDetail = useUiStore((s) => s.openDetail);
   const detailNoteId = useUiStore((s) => s.detailNoteId);
   const editorOpen = useUiStore((s) => s.editor.open);
+  const settingsOpen = useUiStore((s) => s.settingsOpen);
   const deleteTargetId = useUiStore((s) => s.deleteTargetId);
   const requestDeleteNote = useUiStore((s) => s.requestDeleteNote);
   const purgeTargetId = useUiStore((s) => s.purgeTargetId);
@@ -83,6 +85,38 @@ export default function App() {
   useAppShortcuts({ onFocusSearch: focusSearch, onNewNote: newNote });
 
   const [confirmEmptyTrashOpen, setConfirmEmptyTrashOpen] = useState(false);
+
+  // Keyboard navigation over the currently listed cards.
+  const navIds = useMemo(
+    () => (trashOpen ? visibleTrash.map((n) => n.id) : visibleNotes.map((n) => n.id)),
+    [trashOpen, visibleTrash, visibleNotes],
+  );
+  const navEnabled =
+    !editorOpen &&
+    !detailNoteId &&
+    !settingsOpen &&
+    deleteTargetId == null &&
+    purgeTargetId == null &&
+    !confirmClearOpen &&
+    !confirmEmptyTrashOpen &&
+    status === 'ready';
+  const navActions = useMemo(
+    () => ({
+      onOpen: (i: number) => openDetail(navIds[i]!),
+      onEdit: (i: number) => {
+        const id = navIds[i]!;
+        if (trashOpen) void restoreNote(id);
+        else openEditor(id);
+      },
+      onDelete: (i: number) => {
+        const id = navIds[i]!;
+        if (trashOpen) requestPurgeNote(id);
+        else requestDeleteNote(id);
+      },
+    }),
+    [navIds, trashOpen, openDetail, openEditor, restoreNote, requestPurgeNote, requestDeleteNote],
+  );
+  useCardNavigation(navIds, navEnabled, navActions);
 
   const activeCount = useMemo(() => activeNotes(notes).length, [notes]);
 

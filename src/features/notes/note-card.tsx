@@ -38,7 +38,9 @@ export function NoteCard({
 
   return (
     <article
-      className="group flex h-full flex-col rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-ring"
+      data-note-card={note.id}
+      tabIndex={-1}
+      className="group flex h-full flex-col rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-within:ring-2 focus-within:ring-ring"
       aria-label={`Note from ${formatRelative(note.createdAt)}`}
     >
       {/* Clickable preview opens the detail view */}

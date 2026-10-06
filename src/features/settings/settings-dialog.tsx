@@ -182,7 +182,12 @@ export function SettingsDialog() {
         <footer className="rounded-md bg-muted px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
           Note Tracker is fully offline: no accounts, no servers, no tracking. Shortcuts:
           <kbd className="mx-0.5 rounded border bg-background px-1">/</kbd> search ·
-          <kbd className="mx-0.5 rounded border bg-background px-1">n</kbd> new note · rebind the
+          <kbd className="mx-0.5 rounded border bg-background px-1">n</kbd> new note ·
+          <kbd className="mx-0.5 rounded border bg-background px-1">j</kbd>/
+          <kbd className="mx-0.5 rounded border bg-background px-1">k</kbd> move ·
+          <kbd className="mx-0.5 rounded border bg-background px-1">Enter</kbd> open ·
+          <kbd className="mx-0.5 rounded border bg-background px-1">e</kbd> edit ·
+          <kbd className="mx-0.5 rounded border bg-background px-1">x</kbd> trash · rebind the
           open shortcut in your browser's extension keyboard settings.
         </footer>
       </DialogContent>
